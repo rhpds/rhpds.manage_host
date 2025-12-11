@@ -1,0 +1,18 @@
+
+namespace: rhpds
+name: manage_host
+version: 1.0.0
+readme: README.md
+authors:
+- your name <example@domain.com>
+description: your collection description
+license:
+- GPL-2.0-or-later
+license_file: ''
+tags: []
+dependencies: {}
+repository: https://github.com/rhpds/rhpds.asset_injector.git
+documentation: https://github.com/rhpds/rhpds.asset_injector.git
+homepage: https://github.com/rhpds/rhpds.asset_injector.git
+issues: https://github.com/rhpds/rhpds.asset_injector.git/issue/tracker
+build_ignore: []
