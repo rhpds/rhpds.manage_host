@@ -1,0 +1,42 @@
+---
+# examples vars
+
+# asset_injector_tasks:
+#   - description: Remove 50-cloud-init.conf, ssh issue
+#     module: file
+#     state: remove
+#     path: /path/to/the/file
+
+#   - description: Update sshd_config for password auth
+#     module: blockinfile
+#     path: /etc/ssh/sshd_config
+#     state: present
+#     marker: "# {mark} Our custom SSH settings via Ansible"
+#     block: |
+#       # Our custom SSH settings via Ansible
+#       ChallengeResponseAuthentication no
+#       PasswordAuthentication yes
+#       UsePAM yes
+
+#   - description: Restart sshd to pick up new password support configuration
+#     module: service
+#     name: sshd
+#     state: restarted
+
+#   - description: Restart sshd to pick up new password support configuration
+#     module: service
+#     name: sshd
+#     state: restarted
+
+#   - description: Openshift oc login
+#     module: command
+#     become: true
+#     become_user: lab-user
+#     cmd: "/usr/bin/oc login {{ openshift_api_url }} --token={{ openshift_cluster_admin_token }} --insecure-skip-tls-verify=true"
+
+#   - description: Download AAP manifest
+#     module: get_url
+#     src: "https://www.example.com/aap_test_manifest.zip"
+#     dest: /home/{{ student_name }}/
+#     owner: "{{ student_name }}"
+#     group: "{{ student_name }}"

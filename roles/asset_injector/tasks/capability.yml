@@ -1,0 +1,9 @@
+---
+
+- name: Manage capabilities
+  become: "{{ _asset.become | default(omit) }}"
+  become_user: "{{ _asset.become_user | default(omit) }}"
+  community.general.capabilities:
+    path: "{{ _asset.path | default(omit) }}"
+    state: "{{ _asset.state }}"
+    capability: "{{ _asset.capability }}"

@@ -1,0 +1,9 @@
+---
+
+- name: Manage services
+  become: "{{ _asset.become | default(omit) }}"
+  become_user: "{{ _asset.become_user | default(omit) }}"
+  ansible.builtin.service:
+    name: "{{ _asset.name }}"
+    state: "{{ _asset.state }}"
+    enabled: "{{ _asset.enabled | default(omit) }}"

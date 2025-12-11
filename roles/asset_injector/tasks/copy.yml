@@ -1,0 +1,13 @@
+---
+
+- name: Copy file
+  become: "{{ _asset.become | default(omit) }}"
+  become_user: "{{ _asset.become_user | default(omit) }}"
+  ansible.builtin.copy:
+    content: "{{ _asset.content | default(omit) }}"
+    src: "{{ _asset.src | default(omit) }}"
+    dest: "{{ _asset.dest }}"
+    owner: "{{ _asset.owner | default(omit) }}"
+    group: "{{ _asset.group | default(omit) }}"
+    mode: "{{ _asset.mode }}"
+    remote_src: "{{ _asset.remote_src | default(omit) }}"
