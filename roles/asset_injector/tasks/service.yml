@@ -1,6 +1,6 @@
 ---
 
-- name: Manage services
+- name: Services | {{ _asset.description }}
   become: "{{ _asset.become | default(omit) }}"
   become_user: "{{ _asset.become_user | default(omit) }}"
   ansible.builtin.service:
