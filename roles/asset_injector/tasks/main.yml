@@ -1,7 +1,7 @@
 ---
 - name: Include task
   ansible.builtin.include_tasks: "{{ _asset.module }}.yml"
-  loop: "{{ asset_injector_tasks }}"
+  loop: "{{ asset_injector_modules }}"
   loop_control:
     loop_var: _asset
   ignore_errors: true

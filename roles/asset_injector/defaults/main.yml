@@ -1,7 +1,7 @@
 ---
 # examples vars
 
-# asset_injector_tasks:
+# asset_injector_modules:
 #   - description: Remove 50-cloud-init.conf, ssh issue
 #     module: file
 #     state: remove
