@@ -9,5 +9,5 @@
     dest: "{{ _asset.dest }}"
     owner: "{{ _asset.owner | default(omit) }}"
     group: "{{ _asset.group | default(omit) }}"
-    mode: "{{ _asset.mode }}"
+    mode: "{{ _asset.mode | default(omit) }}"
     remote_src: "{{ _asset.remote_src | default(omit) }}"
