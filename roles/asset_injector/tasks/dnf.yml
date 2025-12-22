@@ -1,8 +1,0 @@
----
-- name: Dnf | {{ _asset.description }}
-  become: "{{ _asset.become | default(omit) }}"
-  become_user: "{{ _asset.become_user | default(omit) }}"
-  ansible.builtin.dnf:
-    name: "{{ _asset.name }}"
-    state: "{{ _asset.state | default(omit) }}"
-    disable_gpg_check: "{{ _asset.disable_gpg_check | default(omit) }}"

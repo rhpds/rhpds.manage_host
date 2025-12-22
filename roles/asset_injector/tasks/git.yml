@@ -1,8 +1,0 @@
----
-- name: Git | {{ _asset.description }}
-  become: "{{ _asset.become | default(omit) }}"
-  become_user: "{{ _asset.become_user | default(omit) }}"
-  ansible.builtin.git:
-    repo: "{{ _asset.src }}"
-    dest: "{{ _asset.dest }}"
-    version: "{{ _asset.scm_ref | default(omit) }}"

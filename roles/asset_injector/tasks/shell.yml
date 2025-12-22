@@ -1,6 +1,0 @@
----
-- name: Shell | {{ _asset.description }}
-  become: "{{ _asset.become | default(omit) }}"
-  become_user: "{{ _asset.become_user | default(omit) }}"
-  ansible.builtin.shell:
-    cmd: "{{ _asset.cmd }}"

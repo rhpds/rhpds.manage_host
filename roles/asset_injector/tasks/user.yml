@@ -1,9 +1,0 @@
----
-- name: User | {{ _asset.description }}
-  become: "{{ _asset.become | default(omit) }}"
-  become_user: "{{ _asset.become_user | default(omit) }}"
-  ansible.builtin.user:
-    name: "{{ _asset.name }}"
-    state: "{{ _asset.state }}"
-    password: "{{ _asset.password | default(omit) }}"
-    groups: "{{ _asset.groups | default(omit) }}"
