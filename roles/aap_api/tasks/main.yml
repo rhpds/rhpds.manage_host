@@ -1,8 +1,10 @@
 ---
 - name: Process AAP API endpoints
   ansible.builtin.include_tasks:
-    file: "{{ _endpoint.type }}.yml"
+    file: manage_resource.yml
   loop: "{{ aap_api_endpoints }}"
   loop_control:
     loop_var: _endpoint
-  when: _endpoint.type is defined
+  when:
+    - _endpoint.name is defined
+    - _endpoint.endpoint is defined

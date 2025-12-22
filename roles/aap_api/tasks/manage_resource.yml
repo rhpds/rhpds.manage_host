@@ -1,0 +1,220 @@
+---
+# Universal task file for managing AAP Controller resources
+# Supports: credentials, projects, inventories, job_templates, organizations, teams, etc.
+
+- name: Set AAP Controller connection variables
+  ansible.builtin.set_fact:
+    _controller_api: "{{ _endpoint.api | default('/api/controller/v2/') }}"
+    _controller_url: "{{ aap_api_controller_url }}"
+    _controller_username: "{{ aap_api_controller_username }}"
+    _controller_password: "{{ aap_api_controller_password }}"
+    _controller_verify_ssl: "{{ aap_api_controller_verify_ssl }}"
+    _resource_name: "{{ _endpoint.name }}"
+    _resource_endpoint: "{{ _endpoint.endpoint }}"
+    _resource_description: "{{ _endpoint.description | default(_endpoint.name) }}"
+
+# Optional: Get organization ID if specified
+- name: Get organization ID
+  ansible.builtin.uri:
+    url: "{{ _controller_url }}{{ _controller_api }}organizations/?name={{ _endpoint.organization }}"
+    method: GET
+    user: "{{ _controller_username }}"
+    password: "{{ _controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ _controller_verify_ssl }}"
+    return_content: true
+  register: r_org_response
+  when: _endpoint.organization is defined
+
+- name: Validate organization response
+  ansible.builtin.fail:
+    msg: "Organization '{{ _endpoint.organization }}' not found in AAP Controller"
+  when:
+    - _endpoint.organization is defined
+    - r_org_response.json.results | length == 0
+
+- name: Set organization ID
+  ansible.builtin.set_fact:
+    organization_id: "{{ r_org_response.json.results[0].id }}"
+  when:
+    - _endpoint.organization is defined
+    - r_org_response.json.results | length > 0
+
+# Optional: Get credential type ID if specified (for credentials)
+- name: Get credential type for {{ _endpoint.credential_type }}
+  ansible.builtin.uri:
+    url: "{{ _controller_url }}{{ _controller_api }}credential_types/?name={{ _endpoint.credential_type | urlencode }}"
+    method: GET
+    user: "{{ _controller_username }}"
+    password: "{{ _controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ _controller_verify_ssl }}"
+    return_content: true
+  register: r_cred_type_response
+  when: _endpoint.credential_type is defined
+
+- name: Validate credential type response
+  ansible.builtin.fail:
+    msg: "Credential type '{{ _endpoint.credential_type }}' not found in AAP Controller"
+  when:
+    - _endpoint.credential_type is defined
+    - r_cred_type_response.json.results | length == 0
+
+- name: Set credential type ID
+  ansible.builtin.set_fact:
+    credential_type_id: "{{ r_cred_type_response.json.results[0].id }}"
+  when:
+    - _endpoint.credential_type is defined
+    - r_cred_type_response.json.results | length > 0
+
+# Optional: Get project ID if specified (for job templates, inventories, etc.)
+- name: Get project ID for {{ _endpoint.project }}
+  ansible.builtin.uri:
+    url: "{{ _controller_url }}{{ _controller_api }}projects/?name={{ _endpoint.project | urlencode }}"
+    method: GET
+    user: "{{ _controller_username }}"
+    password: "{{ _controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ _controller_verify_ssl }}"
+    return_content: true
+  register: r_project_response
+  when: _endpoint.project is defined
+
+- name: Validate project response
+  ansible.builtin.fail:
+    msg: "Project '{{ _endpoint.project }}' not found in AAP Controller"
+  when:
+    - _endpoint.project is defined
+    - r_project_response.json.results | length == 0
+
+- name: Set project ID
+  ansible.builtin.set_fact:
+    project_id: "{{ r_project_response.json.results[0].id }}"
+  when:
+    - _endpoint.project is defined
+    - r_project_response.json.results | length > 0
+
+# Optional: Get inventory ID if specified (for job templates)
+- name: Get inventory ID for {{ _endpoint.inventory }}
+  ansible.builtin.uri:
+    url: "{{ _controller_url }}{{ _controller_api }}inventories/?name={{ _endpoint.inventory | urlencode }}"
+    method: GET
+    user: "{{ _controller_username }}"
+    password: "{{ _controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ _controller_verify_ssl }}"
+    return_content: true
+  register: r_inventory_response
+  when: _endpoint.inventory is defined
+
+- name: Validate inventory response
+  ansible.builtin.fail:
+    msg: "Inventory '{{ _endpoint.inventory }}' not found in AAP Controller"
+  when:
+    - _endpoint.inventory is defined
+    - r_inventory_response.json.results | length == 0
+
+- name: Set inventory ID
+  ansible.builtin.set_fact:
+    inventory_id: "{{ r_inventory_response.json.results[0].id }}"
+  when:
+    - _endpoint.inventory is defined
+    - r_inventory_response.json.results | length > 0
+
+# Build the resource search query
+- name: Build search query parameters
+  ansible.builtin.set_fact:
+    _search_params: "name={{ _resource_name | urlencode }}"
+
+- name: Add organization to search query
+  ansible.builtin.set_fact:
+    _search_params: "{{ _search_params }}&organization={{ organization_id }}"
+  when: organization_id is defined
+
+# Check if resource already exists
+- name: Check if resource '{{ _resource_name }}' exists at {{ _resource_endpoint }}
+  ansible.builtin.uri:
+    url: "{{ _controller_url }}{{ _controller_api }}{{ _resource_endpoint }}/?{{ _search_params }}"
+    method: GET
+    user: "{{ _controller_username }}"
+    password: "{{ _controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ _controller_verify_ssl }}"
+    return_content: true
+  register: r_resource_check
+
+- name: Set resource exists flag
+  ansible.builtin.set_fact:
+    resource_exists: "{{ r_resource_check.json.results | length > 0 }}"
+    resource_id: "{{ r_resource_check.json.results[0].id | default('') }}"
+
+# Build the request body dynamically
+- name: Initialize request body
+  ansible.builtin.set_fact:
+    _request_body:
+      name: "{{ _resource_name }}"
+      description: "{{ _resource_description }}"
+
+- name: Add organization to request body
+  ansible.builtin.set_fact:
+    _request_body: "{{ _request_body | combine({'organization': organization_id}) }}"
+  when: organization_id is defined
+
+- name: Add credential_type to request body
+  ansible.builtin.set_fact:
+    _request_body: "{{ _request_body | combine({'credential_type': credential_type_id}) }}"
+  when: credential_type_id is defined
+
+- name: Add project to request body
+  ansible.builtin.set_fact:
+    _request_body: "{{ _request_body | combine({'project': project_id}) }}"
+  when: project_id is defined
+
+- name: Add inventory to request body
+  ansible.builtin.set_fact:
+    _request_body: "{{ _request_body | combine({'inventory': inventory_id}) }}"
+  when: inventory_id is defined
+
+- name: Merge additional attributes into request body
+  ansible.builtin.set_fact:
+    _request_body: "{{ _request_body | combine(_endpoint.attributes | default({})) }}"
+
+# Update existing resource
+- name: Update existing {{ _resource_endpoint | regex_replace('s$', '') }} '{{ _resource_name }}'
+  ansible.builtin.uri:
+    url: "{{ _controller_url }}{{ _controller_api }}{{ _resource_endpoint }}/{{ resource_id }}/"
+    method: PATCH
+    user: "{{ _controller_username }}"
+    password: "{{ _controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ _controller_verify_ssl }}"
+    status_code: [200, 201]
+    body_format: json
+    body: "{{ _request_body }}"
+  register: r_update_resource
+  when: resource_exists | bool
+
+# Create new resource
+- name: Create new {{ _resource_endpoint | regex_replace('s$', '') }} '{{ _resource_name }}'
+  ansible.builtin.uri:
+    url: "{{ _controller_url }}{{ _controller_api }}{{ _resource_endpoint }}/"
+    method: POST
+    user: "{{ _controller_username }}"
+    password: "{{ _controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ _controller_verify_ssl }}"
+    status_code: [200, 201]
+    body_format: json
+    body: "{{ _request_body }}"
+  register: r_create_resource
+  when: not resource_exists | bool
+
+# Print operation result
+- name: Display {{ _resource_endpoint | regex_replace('s$', '') }} operation result
+  ansible.builtin.debug:
+    msg:
+      - "Operation: {{ 'Updated' if resource_exists else 'Created' }}"
+      - "Resource: {{ _resource_endpoint | regex_replace('s$', '') }}"
+      - "Name: {{ _resource_name }}"
+      - "Status: {{ (r_update_resource.status | default(r_create_resource.status)) }}"
+      - "ID: {{ resource_id if resource_exists else r_create_resource.json.id }}"

@@ -4,7 +4,7 @@ Ansible role to manage Ansible Automation Platform (AAP) Controller resources vi
 
 ## Description
 
-This role provides a flexible way to interact with AAP Controller's REST API to manage various resources. Currently supports creating credentials, with extensibility for other resource types.
+This role provides a flexible and universal way to interact with AAP Controller's REST API to manage any type of resource including credentials, projects, inventories, job templates, organizations, teams, and more. The role automatically detects if a resource exists and updates it, or creates it if it doesn't exist (idempotent operations).
 
 ## Requirements
 
@@ -35,7 +35,7 @@ None
 
 ## Example Playbook
 
-### Basic Usage - Create OpenShift Credential
+### Example 1: Create/Update OpenShift Credential
 
 ```yaml
 - hosts: localhost
@@ -49,22 +49,22 @@ None
     openshift_api_token: sha256~xxxxxxxxxxxxxxxxxxxxx
 
     aap_api_endpoints:
-      - type: credential
-        name: my-openshift-cluster
-        api: /api/v2/
+      - name: my-openshift-cluster
+        endpoint: credentials
         description: Production OpenShift cluster credential
         organization: Default
         credential_type: OpenShift or Kubernetes API Bearer Token
-        inputs:
-          host: "{{ openshift_api_url }}"
-          bearer_token: "{{ openshift_api_token }}"
-          verify_ssl: false
+        attributes:
+          inputs:
+            host: "{{ openshift_api_url }}"
+            bearer_token: "{{ openshift_api_token }}"
+            verify_ssl: false
 
   roles:
     - aap_api
 ```
 
-### Multiple Credentials
+### Example 2: Create/Update Multiple Resources
 
 ```yaml
 - hosts: localhost
@@ -74,25 +74,95 @@ None
     aap_api_controller_password: secret123
 
     aap_api_endpoints:
-      - type: credential
-        name: dev-openshift
+      # Create organization
+      - name: Engineering
+        endpoint: organizations
+        description: Engineering team organization
+        attributes:
+          max_hosts: 100
+
+      # Create credential
+      - name: dev-openshift
+        endpoint: credentials
         description: Development OpenShift cluster
         organization: Engineering
         credential_type: OpenShift or Kubernetes API Bearer Token
-        inputs:
-          host: https://api.dev.example.com:6443
-          bearer_token: "{{ dev_token }}"
-          verify_ssl: true
+        attributes:
+          inputs:
+            host: https://api.dev.example.com:6443
+            bearer_token: "{{ dev_token }}"
+            verify_ssl: true
 
-      - type: credential
-        name: prod-openshift
-        description: Production OpenShift cluster
-        organization: Operations
-        credential_type: OpenShift or Kubernetes API Bearer Token
-        inputs:
-          host: https://api.prod.example.com:6443
-          bearer_token: "{{ prod_token }}"
-          verify_ssl: true
+      # Create project
+      - name: ansible-playbooks
+        endpoint: projects
+        description: Ansible automation playbooks
+        organization: Engineering
+        attributes:
+          scm_type: git
+          scm_url: https://github.com/example/playbooks.git
+          scm_branch: main
+          scm_update_on_launch: true
+
+      # Create inventory
+      - name: dev-servers
+        endpoint: inventories
+        description: Development environment servers
+        organization: Engineering
+        attributes:
+          variables: |
+            ---
+            ansible_connection: ssh
+            ansible_user: ansible
+
+      # Create job template
+      - name: deploy-app
+        endpoint: job_templates
+        description: Deploy application to dev
+        organization: Engineering
+        project: ansible-playbooks
+        inventory: dev-servers
+        attributes:
+          playbook: deploy.yml
+          job_type: run
+          ask_variables_on_launch: true
+
+  roles:
+    - aap_api
+```
+
+### Example 3: AWS and Machine Credentials
+
+```yaml
+- hosts: localhost
+  vars:
+    aap_api_controller_url: https://controller.example.com
+    aap_api_controller_username: admin
+    aap_api_controller_password: secret123
+
+    aap_api_endpoints:
+      # SSH credential for Linux servers
+      - name: linux-ssh-key
+        endpoint: credentials
+        description: SSH key for Linux servers
+        organization: Default
+        credential_type: Machine
+        attributes:
+          inputs:
+            username: ansible
+            ssh_key_data: "{{ lookup('file', '~/.ssh/id_rsa') }}"
+            become_method: sudo
+
+      # AWS credential
+      - name: aws-production
+        endpoint: credentials
+        description: AWS production account
+        organization: Default
+        credential_type: Amazon Web Services
+        attributes:
+          inputs:
+            username: "{{ aws_access_key_id }}"
+            password: "{{ aws_secret_access_key }}"
 
   roles:
     - aap_api
@@ -100,17 +170,36 @@ None
 
 ## Endpoint Configuration Format
 
-Each endpoint in `aap_api_endpoints` supports:
+Each endpoint in `aap_api_endpoints` uses a universal structure:
 
-| Field | Description | Required |
-|-------|-------------|----------|
-| `type` | Resource type (currently only 'credential' supported) | Yes |
-| `name` | Name of the resource (also used as description fallback) | Yes |
-| `api` | API path (default: `/api/v2/`) | No |
-| `description` | Description of the resource (defaults to `name` if not provided) | No |
-| `organization` | Organization name in AAP | No (default: 'Default') |
-| `credential_type` | Credential type name | Yes for credentials |
-| `inputs` | Dictionary of credential inputs | Yes for credentials |
+### Required Fields
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `name` | Name of the resource | `my-openshift-cluster` |
+| `endpoint` | AAP API endpoint type | `credentials`, `projects`, `inventories`, `job_templates`, `organizations`, `teams` |
+
+### Optional Fields
+
+| Field | Description | Default | Used For |
+|-------|-------------|---------|----------|
+| `api` | API path | `/api/controller/v2/` | All resources |
+| `description` | Description of the resource | `name` value | All resources |
+| `organization` | Organization name (resolved to ID) | - | Most resources |
+| `credential_type` | Credential type name (resolved to ID) | - | Credentials only |
+| `project` | Project name (resolved to ID) | - | Job templates |
+| `inventory` | Inventory name (resolved to ID) | - | Job templates |
+| `attributes` | Additional resource-specific attributes | `{}` | All resources |
+
+### How It Works
+
+1. **name** and **endpoint** are always required
+2. The role automatically resolves references (organization, credential_type, project, inventory) to their IDs
+3. All other resource-specific fields go into the **attributes** dictionary
+4. The role checks if the resource exists:
+   - If exists: Updates it (PATCH)
+   - If not: Creates it (POST)
+5. Operations are fully idempotent
 
 ## Supported Credential Types
 
@@ -141,14 +230,44 @@ The role includes validation for:
 
 If any validation fails, the role will fail with a descriptive error message.
 
-## Extending the Role
+## Supported AAP Resources
 
-To add support for other AAP resources:
+This role uses a universal approach and supports ALL AAP Controller API endpoints, including:
 
-1. Create a new task file: `tasks/<resource_type>.yml`
-2. Follow the pattern in `tasks/credential.yml`
-3. Add appropriate defaults in `defaults/main.yml`
-4. Update this README with examples
+### Common Resources
+
+| Resource Type | Endpoint Value | Description |
+|--------------|---------------|-------------|
+| Credentials | `credentials` | Machine, SSH, cloud provider, API tokens, etc. |
+| Projects | `projects` | Git/SVN repositories containing playbooks |
+| Inventories | `inventories` | Host inventories |
+| Job Templates | `job_templates` | Playbook execution templates |
+| Workflow Job Templates | `workflow_job_templates` | Multi-job workflows |
+| Organizations | `organizations` | Organizational units |
+| Teams | `teams` | User groups within organizations |
+| Users | `users` | AAP users |
+| Schedules | `schedules` | Scheduled job runs |
+| Notification Templates | `notification_templates` | Notification integrations |
+| Execution Environments | `execution_environments` | Container images for job execution |
+
+### Advanced Resources
+
+| Resource Type | Endpoint Value | Description |
+|--------------|---------------|-------------|
+| Inventory Sources | `inventory_sources` | Dynamic inventory sources |
+| Groups | `groups` | Inventory groups |
+| Hosts | `hosts` | Individual hosts |
+| Applications | `applications` | OAuth2 applications |
+| Tokens | `tokens` | API tokens |
+
+### No Extension Needed
+
+The role is designed to work with ANY AAP Controller endpoint without modification. Simply:
+
+1. Identify the endpoint name from AAP API (e.g., `/api/controller/v2/credentials/`)
+2. Use the endpoint name (without slashes) in your configuration
+3. Add resource-specific fields in the `attributes` dictionary
+4. The role handles the rest automatically
 
 ## License
 

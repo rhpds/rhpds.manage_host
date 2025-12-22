@@ -5,15 +5,93 @@ aap_api_controller_username: <CHANGEME>
 aap_api_controller_password: <CHANGEME>
 aap_api_controller_verify_ssl: false
 
-# AAP API endpoints configuration
+# AAP API endpoints configuration - Universal approach
+# Each endpoint requires 'name' and 'endpoint' at minimum
+# Additional fields depend on the resource type
+
 aap_api_endpoints:
-  - type: credential
-    name: openshift-credential
+  # Example 1: OpenShift Credential
+  - name: openshift-credential
+    endpoint: credentials
     api: /api/controller/v2/
     description: OpenShift cluster credential
     organization: Default
     credential_type: OpenShift or Kubernetes API Bearer Token
-    inputs:
-      host: "{{ openshift_api_url }}"
-      bearer_token: "{{ openshift_api_token }}"
-      verify_ssl: true
+    attributes:
+      inputs:
+        host: "{{ openshift_api_url }}"
+        bearer_token: "{{ openshift_api_token }}"
+        verify_ssl: true
+
+  # Example 2: Machine Credential (SSH)
+  # - name: linux-servers-credential
+  #   endpoint: credentials
+  #   description: SSH credential for Linux servers
+  #   organization: Default
+  #   credential_type: Machine
+  #   attributes:
+  #     inputs:
+  #       username: ansible
+  #       ssh_key_data: "{{ lookup('file', '/path/to/ssh/key') }}"
+  #       become_method: sudo
+
+  # Example 3: Project (Git Repository)
+  # - name: my-ansible-project
+  #   endpoint: projects
+  #   description: Ansible playbooks repository
+  #   organization: Default
+  #   attributes:
+  #     scm_type: git
+  #     scm_url: https://github.com/example/ansible-playbooks.git
+  #     scm_branch: main
+  #     scm_update_on_launch: true
+  #     scm_delete_on_update: true
+
+  # Example 4: Inventory
+  # - name: production-inventory
+  #   endpoint: inventories
+  #   description: Production servers inventory
+  #   organization: Default
+  #   attributes:
+  #     variables: |
+  #       ---
+  #       ansible_connection: ssh
+  #       ansible_user: ansible
+
+  # Example 5: Job Template
+  # - name: deploy-application
+  #   endpoint: job_templates
+  #   description: Deploy application to production
+  #   organization: Default
+  #   project: my-ansible-project
+  #   inventory: production-inventory
+  #   attributes:
+  #     playbook: deploy.yml
+  #     job_type: run
+  #     ask_variables_on_launch: true
+  #     ask_limit_on_launch: true
+  #     concurrent_jobs_enabled: false
+
+  # Example 6: Organization
+  # - name: Engineering
+  #   endpoint: organizations
+  #   description: Engineering team organization
+  #   attributes:
+  #     max_hosts: 100
+
+  # Example 7: Team
+  # - name: DevOps-Team
+  #   endpoint: teams
+  #   description: DevOps engineering team
+  #   organization: Engineering
+
+  # Example 8: AWS Credential
+  # - name: aws-production
+  #   endpoint: credentials
+  #   description: AWS production account credentials
+  #   organization: Default
+  #   credential_type: Amazon Web Services
+  #   attributes:
+  #     inputs:
+  #       username: "{{ aws_access_key_id }}"
+  #       password: "{{ aws_secret_access_key }}"
