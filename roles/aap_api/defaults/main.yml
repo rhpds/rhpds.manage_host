@@ -1,0 +1,19 @@
+---
+# AAP Controller connection settings
+aap_api_controller_url: https://aap.example.com
+aap_api_controller_username: <CHANGEME>
+aap_api_controller_password: <CHANGEME>
+aap_api_controller_verify_ssl: false
+
+# AAP API endpoints configuration
+aap_api_endpoints:
+  - type: credential
+    name: openshift-credential
+    api: /api/controller/v2/
+    description: OpenShift cluster credential
+    organization: Default
+    credential_type: OpenShift or Kubernetes API Bearer Token
+    inputs:
+      host: "{{ openshift_api_url }}"
+      bearer_token: "{{ openshift_api_token }}"
+      verify_ssl: true

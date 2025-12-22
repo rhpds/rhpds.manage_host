@@ -1,0 +1,16 @@
+galaxy_info:
+  author: Mitesh, The Mouse <mitsharm@redhat.com>
+  description: Manage Ansible Automation Platform (AAP) Controller resources via REST API
+  company: Red Hat
+  license: GPL-3.0-or-later
+  min_ansible_version: "2.9"
+  platforms:
+    - name: EL
+      versions:
+        - all
+  galaxy_tags:
+    - aap
+    - automation
+    - controller
+    - api
+dependencies: []
