@@ -1,8 +1,14 @@
 ---
-- name: Include task
+# Universal module execution approach
+# Execute any Ansible module with its parameters dynamically
+- name: Execute asset injector modules
   ansible.builtin.include_tasks:
-    file: "{{ _asset.module }}.yml"
+    file: execute_module.yml
   loop: "{{ asset_injector_modules }}"
   loop_control:
     loop_var: _asset
-  ignore_errors: true
+  when:
+    - asset_injector_modules is defined
+    - asset_injector_modules | length > 0
+    - _asset.module is defined
+    - _asset.description is defined

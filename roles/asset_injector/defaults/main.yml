@@ -1,42 +1,301 @@
 ---
-# examples vars
+# Asset Injector Module Configuration
+# Universal approach - supports ANY Ansible module with dynamic parameter passing
 
+# Required fields for each module:
+#   - module: The Ansible module name (e.g., file, copy, dnf, service)
+#   - description: Human-readable description of what the task does
+
+# Control parameters (optional):
+#   - become: Run with privilege escalation (default: false)
+#   - become_user: User to become (default: root)
+#   - when: Conditional execution (default: true)
+#   - debug: Show detailed execution results (default: false)
+#   - delegate_to: Delegate task to another host
+#   - tags: Task tags for selective execution
+#   - ignore_errors: Continue on error (default: false)
+#   - changed_when: Override change detection
+#   - failed_when: Override failure detection
+#   - retries: Number of retries
+#   - delay: Delay between retries
+#   - until: Retry until condition is met
+#   - notify: Handler to notify on change
+
+# All other parameters are passed directly to the module
+
+asset_injector_modules: []
+
+# Comprehensive examples showing different module types:
+
+# # Example 1: File Management
 # asset_injector_modules:
-#   - description: Remove 50-cloud-init.conf, ssh issue
-#     module: file
-#     state: remove
-#     path: /path/to/the/file
+#   - description: Remove cloud-init SSH configuration file
+#     module: ansible.builtin.file
+#     path: /etc/ssh/sshd_config.d/50-cloud-init.conf
+#     state: absent
+#     become: true
 
-#   - description: Update sshd_config for password auth
-#     module: blockinfile
+#   - description: Create application directory
+#     module: ansible.builtin.file
+#     path: /opt/myapp
+#     state: directory
+#     owner: appuser
+#     group: appuser
+#     mode: '0755'
+#     become: true
+
+#   - description: Create symbolic link
+#     module: ansible.builtin.file
+#     src: /opt/myapp/current
+#     dest: /opt/myapp/live
+#     state: link
+#     become: true
+
+# # Example 2: File Content Management
+#   - description: Copy configuration file
+#     module: ansible.builtin.copy
+#     src: /tmp/app.conf
+#     dest: /etc/myapp/app.conf
+#     owner: root
+#     group: root
+#     mode: '0644'
+#     backup: true
+#     become: true
+
+#   - description: Create file with inline content
+#     module: ansible.builtin.copy
+#     content: |
+#       # Application configuration
+#       APP_ENV=production
+#       APP_DEBUG=false
+#     dest: /etc/myapp/.env
+#     owner: appuser
+#     group: appuser
+#     mode: '0600'
+#     become: true
+
+#   - description: Deploy Jinja2 template
+#     module: ansible.builtin.template
+#     src: templates/nginx.conf.j2
+#     dest: /etc/nginx/sites-available/myapp.conf
+#     owner: root
+#     group: root
+#     mode: '0644'
+#     become: true
+#     notify: reload nginx
+
+#   - description: Update SSH configuration for password auth
+#     module: ansible.builtin.blockinfile
 #     path: /etc/ssh/sshd_config
 #     state: present
-#     marker: "# {mark} Our custom SSH settings via Ansible"
+#     marker: "# {mark} ANSIBLE MANAGED - Custom SSH settings"
 #     block: |
-#       # Our custom SSH settings via Ansible
+#       # Enable password authentication
 #       ChallengeResponseAuthentication no
 #       PasswordAuthentication yes
 #       UsePAM yes
+#       PermitRootLogin no
+#     backup: true
+#     become: true
+#     notify: restart sshd
 
-#   - description: Restart sshd to pick up new password support configuration
-#     module: service
+#   - description: Add localhost entry to hosts file
+#     module: ansible.builtin.lineinfile
+#     path: /etc/hosts
+#     line: "127.0.0.1 myapp.local"
+#     state: present
+#     become: true
+
+# # Example 3: Package Management
+#   - description: Install required packages
+#     module: ansible.builtin.dnf
+#     name:
+#       - nginx
+#       - postgresql
+#       - redis
+#     state: present
+#     become: true
+
+#   - description: Install specific package version
+#     module: ansible.builtin.dnf
+#     name: nginx-1.20.1
+#     state: present
+#     disable_gpg_check: false
+#     become: true
+
+#   - description: Remove unwanted packages
+#     module: ansible.builtin.dnf
+#     name:
+#       - telnet
+#       - ftp
+#     state: absent
+#     become: true
+
+#   - description: Install Python packages
+#     module: ansible.builtin.pip
+#     name:
+#       - flask
+#       - gunicorn
+#       - psycopg2-binary
+#     virtualenv: /opt/myapp/venv
+#     become: true
+#     become_user: appuser
+
+# # Example 4: Service Management
+#   - description: Restart SSH service
+#     module: ansible.builtin.service
 #     name: sshd
 #     state: restarted
+#     become: true
 
-#   - description: Restart sshd to pick up new password support configuration
-#     module: service
-#     name: sshd
-#     state: restarted
+#   - description: Enable and start nginx
+#     module: ansible.builtin.service
+#     name: nginx
+#     state: started
+#     enabled: true
+#     become: true
 
-#   - description: Openshift oc login
-#     module: command
+#   - description: Reload systemd daemon
+#     module: ansible.builtin.systemd
+#     daemon_reload: true
+#     become: true
+
+# # Example 5: User and Group Management
+#   - description: Create application user
+#     module: ansible.builtin.user
+#     name: appuser
+#     state: present
+#     shell: /bin/bash
+#     home: /opt/myapp
+#     create_home: true
+#     groups:
+#       - wheel
+#       - docker
+#     append: true
+#     become: true
+
+#   - description: Set user password
+#     module: ansible.builtin.user
+#     name: labuser
+#     password: "{{ 'mypassword' | password_hash('sha512') }}"
+#     update_password: always
+#     become: true
+
+#   - description: Create application group
+#     module: ansible.builtin.group
+#     name: appgroup
+#     state: present
+#     gid: 5000
+#     become: true
+
+# # Example 6: Command Execution
+#   - description: Run OpenShift login command
+#     module: ansible.builtin.command
+#     cmd: "/usr/bin/oc login {{ openshift_api_url }} --token={{ openshift_token }} --insecure-skip-tls-verify=true"
 #     become: true
 #     become_user: lab-user
-#     cmd: "/usr/bin/oc login {{ openshift_api_url }} --token={{ openshift_cluster_admin_token }} --insecure-skip-tls-verify=true"
 
+#   - description: Execute shell script
+#     module: ansible.builtin.shell
+#     cmd: |
+#       set -e
+#       export PATH=/usr/local/bin:$PATH
+#       ./install.sh --mode production
+#     chdir: /opt/myapp
+#     become: true
+#     become_user: appuser
+
+#   - description: Run command with conditional execution
+#     module: ansible.builtin.command
+#     cmd: systemctl restart myapp
+#     become: true
+#     when: inventory_hostname == 'prod-server'
+#     changed_when: false
+
+# # Example 7: Download and Extract
 #   - description: Download AAP manifest
-#     module: get_url
-#     src: "https://www.example.com/aap_test_manifest.zip"
-#     dest: /home/{{ student_name }}/
+#     module: ansible.builtin.get_url
+#     url: "https://www.example.com/aap_manifest.zip"
+#     dest: /tmp/aap_manifest.zip
 #     owner: "{{ student_name }}"
 #     group: "{{ student_name }}"
+#     mode: '0644'
+#     checksum: "sha256:abc123..."
+#     become: true
+
+#   - description: Extract application archive
+#     module: ansible.builtin.unarchive
+#     src: /tmp/myapp-v1.0.tar.gz
+#     dest: /opt/myapp/
+#     remote_src: true
+#     owner: appuser
+#     group: appuser
+#     creates: /opt/myapp/bin/myapp
+#     become: true
+
+# # Example 8: Git Operations
+#   - description: Clone application repository
+#     module: ansible.builtin.git
+#     repo: https://github.com/example/myapp.git
+#     dest: /opt/myapp/src
+#     version: main
+#     force: true
+#     become: true
+#     become_user: appuser
+
+# # Example 9: Advanced Features
+#   - description: Create SELinux file context
+#     module: community.general.sefcontext
+#     target: '/opt/myapp(/.*)?'
+#     setype: httpd_sys_content_t
+#     state: present
+#     become: true
+
+#   - description: Add firewall rule
+#     module: ansible.posix.firewalld
+#     service: http
+#     permanent: true
+#     state: enabled
+#     immediate: true
+#     become: true
+
+#   - description: Mount filesystem
+#     module: ansible.posix.mount
+#     path: /mnt/data
+#     src: /dev/sdb1
+#     fstype: ext4
+#     state: mounted
+#     become: true
+
+#   - description: Schedule cron job
+#     module: ansible.builtin.cron
+#     name: "Backup application data"
+#     minute: "0"
+#     hour: "2"
+#     job: "/opt/myapp/bin/backup.sh"
+#     user: appuser
+#     become: true
+
+# # Example 10: Control Parameters Demo
+#   - description: Task with retry logic
+#     module: ansible.builtin.uri
+#     url: https://api.example.com/health
+#     method: GET
+#     status_code: 200
+#     retries: 5
+#     delay: 10
+#     until: result.status == 200
+#     ignore_errors: true
+#     debug: true
+
+#   - description: Delegated task execution
+#     module: ansible.builtin.command
+#     cmd: kubectl apply -f deployment.yml
+#     delegate_to: bastion
+#     become: true
+
+#   - description: Task with custom change detection
+#     module: ansible.builtin.shell
+#     cmd: echo "Configuration updated"
+#     changed_when: "'updated' in result.stdout"
+#     failed_when: result.rc != 0 and result.rc != 5

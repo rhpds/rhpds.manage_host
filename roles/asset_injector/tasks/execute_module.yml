@@ -1,0 +1,59 @@
+---
+# Universal module executor for asset_injector role
+# Dynamically executes any Ansible module with its parameters
+# Supports all core and collection modules without needing separate task files
+
+# Build module arguments by filtering out control parameters
+- name: Prepare module arguments
+  ansible.builtin.set_fact:
+    _module_name: "{{ _asset.module }}"
+    _module_args: "{{ _asset | dict2items | rejectattr('key', 'in', _control_params) | items2dict }}"
+  vars:
+    _control_params:
+      - module
+      - description
+      - become
+      - become_user
+      - when
+      - debug
+      - delegate_to
+      - tags
+      - ignore_errors
+      - changed_when
+      - failed_when
+      - retries
+      - delay
+      - until
+      - notify
+
+# Execute the module dynamically with all its parameters
+- name: "{{ _asset.module | title }} | {{ _asset.description }}"
+  become: "{{ _asset.become | default(omit) }}"
+  become_user: "{{ _asset.become_user | default(omit) }}"
+  delegate_to: "{{ _asset.delegate_to | default(omit) }}"
+  when: _asset.when | default(true)
+  ignore_errors: "{{ _asset.ignore_errors | default(false) }}"
+  changed_when: "{{ _asset.changed_when | default(omit) }}"
+  failed_when: "{{ _asset.failed_when | default(omit) }}"
+  retries: "{{ _asset.retries | default(omit) }}"
+  delay: "{{ _asset.delay | default(omit) }}"
+  until: "{{ _asset.until | default(omit) }}"
+  notify: "{{ _asset.notify | default(omit) }}"
+  tags: "{{ _asset.tags | default(omit) }}"
+  register: _module_result
+  # Use action to dynamically execute any module
+  action:
+    module: "{{ _module_name }}"
+    args: "{{ _module_args }}"
+
+# Optional debug output
+- name: Display module execution result
+  ansible.builtin.debug:
+    msg:
+      - "Module: {{ _module_name }}"
+      - "Description: {{ _asset.description }}"
+      - "Changed: {{ _module_result.changed | default(false) }}"
+      - "Result: {{ _module_result }}"
+  when:
+    - _asset.debug | default(false)
+    - _module_result is defined
