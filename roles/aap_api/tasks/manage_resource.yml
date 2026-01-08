@@ -131,6 +131,11 @@
     _search_params: "{{ _search_params }}&organization={{ organization_id }}"
   when: organization_id is defined
 
+- name: Add inventory to search query
+  ansible.builtin.set_fact:
+    _search_params: "{{ _search_params }}&inventory={{ inventory_id }}"
+  when: inventory_id is defined
+
 # Check if resource already exists
 - name: Check if resource '{{ _resource_name }}' exists at {{ _resource_endpoint }}
   ansible.builtin.uri:
