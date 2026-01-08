@@ -131,7 +131,48 @@ None
     - aap_api
 ```
 
-### Example 3: AWS and Machine Credentials
+### Example 3: Create Hosts in Inventory
+
+```yaml
+- hosts: localhost
+  vars:
+    aap_api_controller_url: https://controller.example.com
+    aap_api_controller_username: admin
+    aap_api_controller_password: secret123
+
+    aap_api_endpoints:
+      # Linux host
+      - name: web-server-01
+        endpoint: hosts
+        description: Production web server
+        inventory: production-inventory
+        attributes:
+          variables: |
+            ---
+            ansible_host: 192.168.1.10
+            ansible_connection: ssh
+            ansible_user: ansible
+          enabled: true
+
+      # Windows host
+      - name: windows-server
+        endpoint: hosts
+        description: Windows Server 2019
+        inventory: production-inventory
+        attributes:
+          variables: |
+            ---
+            ansible_host: 192.168.1.20
+            ansible_connection: psrp
+            ansible_psrp_auth: negotiate
+            ansible_psrp_cert_validation: ignore
+          enabled: true
+
+  roles:
+    - aap_api
+```
+
+### Example 4: AWS and Machine Credentials
 
 ```yaml
 - hosts: localhost
@@ -185,11 +226,36 @@ Each endpoint in `aap_api_endpoints` uses a universal structure:
 |-------|-------------|---------|----------|
 | `api` | API path | `/api/controller/v2/` | All resources |
 | `description` | Description of the resource | `name` value | All resources |
-| `organization` | Organization name (resolved to ID) | - | Most resources |
+| `organization` | Organization name (resolved to ID) | - | Most resources (NOT hosts) |
 | `credential_type` | Credential type name (resolved to ID) | - | Credentials only |
 | `project` | Project name (resolved to ID) | - | Job templates |
-| `inventory` | Inventory name (resolved to ID) | - | Job templates |
+| `inventory` | Inventory name (resolved to ID) | - | Job templates, hosts |
 | `attributes` | Additional resource-specific attributes | `{}` | All resources |
+
+### Important Notes for Hosts
+
+When creating hosts (`endpoint: hosts`):
+- **DO NOT** include `organization` field - hosts belong to inventories, not directly to organizations
+- **MUST** include `inventory` field - specifies which inventory the host belongs to
+- Common attributes for hosts:
+  - `variables` - Host-specific Ansible variables (YAML string)
+  - `enabled` - Whether the host is enabled (boolean)
+  - `instance_id` - Cloud provider instance ID (optional)
+
+Example host configuration:
+```yaml
+- name: my-host
+  endpoint: hosts
+  description: My server
+  inventory: my-inventory  # Required for hosts
+  # organization: Default  # Do NOT include for hosts
+  attributes:
+    variables: |
+      ---
+      ansible_host: 10.0.0.1
+      ansible_user: admin
+    enabled: true
+```
 
 ### How It Works
 
@@ -241,6 +307,7 @@ This role uses a universal approach and supports ALL AAP Controller API endpoint
 | Credentials | `credentials` | Machine, SSH, cloud provider, API tokens, etc. |
 | Projects | `projects` | Git/SVN repositories containing playbooks |
 | Inventories | `inventories` | Host inventories |
+| Hosts | `hosts` | Individual hosts within inventories |
 | Job Templates | `job_templates` | Playbook execution templates |
 | Workflow Job Templates | `workflow_job_templates` | Multi-job workflows |
 | Organizations | `organizations` | Organizational units |
@@ -256,7 +323,6 @@ This role uses a universal approach and supports ALL AAP Controller API endpoint
 |--------------|---------------|-------------|
 | Inventory Sources | `inventory_sources` | Dynamic inventory sources |
 | Groups | `groups` | Inventory groups |
-| Hosts | `hosts` | Individual hosts |
 | Applications | `applications` | OAuth2 applications |
 | Tokens | `tokens` | API tokens |
 

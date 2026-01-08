@@ -129,7 +129,9 @@
 - name: Add organization to search query
   ansible.builtin.set_fact:
     _search_params: "{{ _search_params }}&organization={{ organization_id }}"
-  when: organization_id is defined
+  when:
+    - organization_id is defined
+    - _resource_endpoint != 'hosts'
 
 - name: Add inventory to search query
   ansible.builtin.set_fact:

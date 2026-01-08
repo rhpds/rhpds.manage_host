@@ -95,3 +95,30 @@ aap_api_endpoints:
   #     inputs:
   #       username: "{{ aws_access_key_id }}"
   #       password: "{{ aws_secret_access_key }}"
+
+  # Example 9: Host (Linux)
+  # - name: web-server-01
+  #   endpoint: hosts
+  #   description: Production web server
+  #   inventory: production-inventory
+  #   attributes:
+  #     variables: |
+  #       ---
+  #       ansible_host: 192.168.1.10
+  #       ansible_connection: ssh
+  #       ansible_user: ansible
+  #     enabled: true
+
+  # Example 10: Host (Windows)
+  # - name: windows-server
+  #   endpoint: hosts
+  #   description: Windows Server 2019
+  #   inventory: production-inventory
+  #   attributes:
+  #     variables: |
+  #       ---
+  #       ansible_host: 192.168.1.20
+  #       ansible_connection: psrp
+  #       ansible_psrp_auth: negotiate
+  #       ansible_psrp_cert_validation: ignore
+  #     enabled: true
