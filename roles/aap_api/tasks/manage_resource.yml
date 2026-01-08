@@ -163,7 +163,9 @@
 - name: Add organization to request body
   ansible.builtin.set_fact:
     _request_body: "{{ _request_body | combine({'organization': organization_id}) }}"
-  when: organization_id is defined
+  when:
+    - organization_id is defined
+    - _resource_endpoint != 'hosts'
 
 - name: Add credential_type to request body
   ansible.builtin.set_fact:
