@@ -122,3 +122,33 @@ aap_api_endpoints:
   #       ansible_psrp_auth: negotiate
   #       ansible_psrp_cert_validation: ignore
   #     enabled: true
+
+# AAP Job Template Launches - Optional
+# Use this to launch job templates after resources are created/updated
+aap_api_job_launches: []
+  # Example 1: Simple launch
+  # - name: deploy-application
+  #   organization: Default
+
+  # Example 2: Launch with extra vars
+  # - name: deploy-application
+  #   organization: Default
+  #   extra_vars:
+  #     environment: production
+  #     version: v1.2.3
+
+  # Example 3: Launch and wait for completion
+  # - name: deploy-application
+  #   organization: Default
+  #   wait: true
+  #   wait_retries: 60
+  #   wait_delay: 10
+  #   extra_vars:
+  #     environment: staging
+
+  # Example 4: Launch with limit and tags
+  # - name: configure-servers
+  #   organization: Default
+  #   limit: web-servers
+  #   tags: nginx,ssl
+  #   skip_tags: debug

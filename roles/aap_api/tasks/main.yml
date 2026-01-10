@@ -8,3 +8,14 @@
   when:
     - _endpoint.name is defined
     - _endpoint.endpoint is defined
+
+- name: Launch AAP job templates
+  ansible.builtin.include_tasks:
+    file: launch_job_template.yml
+  loop: "{{ aap_api_job_launches }}"
+  loop_control:
+    loop_var: _job_template
+  when:
+    - aap_api_job_launches is defined
+    - aap_api_job_launches | length > 0
+    - _job_template.name is defined

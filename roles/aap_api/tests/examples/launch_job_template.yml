@@ -1,0 +1,111 @@
+---
+# Example playbook demonstrating job template launch functionality
+
+- name: Launch AAP job templates
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    aap_api_controller_url: https://controller.example.com
+    aap_api_controller_username: admin
+    aap_api_controller_password: secret123
+    aap_api_controller_verify_ssl: false
+
+    # Example 1: Simple launch
+    aap_api_job_launches:
+      - name: Demo Job Template
+        organization: Default
+
+  roles:
+    - aap_api
+
+---
+# Example 2: Launch with extra variables
+
+- name: Launch job template with extra vars
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    aap_api_controller_url: https://controller.example.com
+    aap_api_controller_username: admin
+    aap_api_controller_password: secret123
+    aap_api_controller_verify_ssl: false
+
+    aap_api_job_launches:
+      - name: deploy-application
+        organization: Engineering
+        extra_vars:
+          environment: production
+          version: v2.1.0
+          enable_feature_x: true
+
+  roles:
+    - aap_api
+
+---
+# Example 3: Launch and wait for completion
+
+- name: Launch and wait for job completion
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    aap_api_controller_url: https://controller.example.com
+    aap_api_controller_username: admin
+    aap_api_controller_password: secret123
+    aap_api_controller_verify_ssl: false
+
+    aap_api_job_launches:
+      - name: provision-infrastructure
+        organization: Operations
+        wait: true
+        wait_retries: 120
+        wait_delay: 15
+        extra_vars:
+          region: us-east-1
+          instance_type: t3.medium
+
+  roles:
+    - aap_api
+
+---
+# Example 4: Create job template and launch it
+
+- name: Create and launch job template
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    aap_api_controller_url: https://controller.example.com
+    aap_api_controller_username: admin
+    aap_api_controller_password: secret123
+    aap_api_controller_verify_ssl: false
+
+    # First create/update the job template
+    aap_api_endpoints:
+      - name: deploy-app
+        endpoint: job_templates
+        description: Deploy application
+        organization: Engineering
+        project: ansible-playbooks
+        inventory: production-servers
+        attributes:
+          playbook: deploy.yml
+          job_type: run
+          ask_variables_on_launch: true
+
+    # Then launch it
+    aap_api_job_launches:
+      - name: deploy-app
+        organization: Engineering
+        wait: true
+        extra_vars:
+          app_version: v2.1.0
+
+  roles:
+    - aap_api

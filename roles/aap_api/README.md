@@ -28,6 +28,7 @@ This role provides a flexible and universal way to interact with AAP Controller'
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `aap_api_endpoints` | List of API endpoints to process | See example below |
+| `aap_api_job_launches` | List of job templates to launch | `[]` (empty list) |
 
 ## Dependencies
 
@@ -209,6 +210,104 @@ None
     - aap_api
 ```
 
+### Example 5: Launch Job Templates
+
+```yaml
+- hosts: localhost
+  vars:
+    aap_api_controller_url: https://controller.example.com
+    aap_api_controller_username: admin
+    aap_api_controller_password: secret123
+
+    # First, create/update resources
+    aap_api_endpoints:
+      - name: deploy-app
+        endpoint: job_templates
+        description: Deploy application to production
+        organization: Engineering
+        project: ansible-playbooks
+        inventory: prod-servers
+        attributes:
+          playbook: deploy.yml
+          job_type: run
+
+    # Then, launch the job template
+    aap_api_job_launches:
+      # Simple launch
+      - name: deploy-app
+        organization: Engineering
+
+  roles:
+    - aap_api
+```
+
+### Example 6: Launch Job Template with Extra Variables
+
+```yaml
+- hosts: localhost
+  vars:
+    aap_api_controller_url: https://controller.example.com
+    aap_api_controller_username: admin
+    aap_api_controller_password: secret123
+
+    aap_api_job_launches:
+      # Launch with extra variables
+      - name: deploy-app
+        organization: Engineering
+        extra_vars:
+          environment: production
+          version: v2.1.0
+          enable_feature_x: true
+
+  roles:
+    - aap_api
+```
+
+### Example 7: Launch and Wait for Completion
+
+```yaml
+- hosts: localhost
+  vars:
+    aap_api_controller_url: https://controller.example.com
+    aap_api_controller_username: admin
+    aap_api_controller_password: secret123
+
+    aap_api_job_launches:
+      # Launch and wait for job to complete
+      - name: deploy-app
+        organization: Engineering
+        wait: true
+        wait_retries: 60    # Check up to 60 times
+        wait_delay: 10      # Wait 10 seconds between checks
+        extra_vars:
+          environment: staging
+          version: v2.1.0
+
+  roles:
+    - aap_api
+```
+
+### Example 8: Launch with Limit and Tags
+
+```yaml
+- hosts: localhost
+  vars:
+    aap_api_controller_url: https://controller.example.com
+    aap_api_controller_username: admin
+    aap_api_controller_password: secret123
+
+    aap_api_job_launches:
+      # Launch with host limit and specific tags
+      - name: configure-servers
+        organization: Engineering
+        limit: web-servers
+        tags: nginx,ssl,firewall
+        skip_tags: debug,testing
+
+  roles:
+    - aap_api
+```
+
 ## Endpoint Configuration Format
 
 Each endpoint in `aap_api_endpoints` uses a universal structure:
@@ -266,6 +365,72 @@ Example host configuration:
    - If exists: Updates it (PATCH)
    - If not: Creates it (POST)
 5. Operations are fully idempotent
+
+## Job Launch Configuration Format
+
+Each job template launch in `aap_api_job_launches` uses this structure:
+
+### Required Fields
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `name` | Name of the job template to launch | `deploy-application` |
+
+### Optional Fields
+
+| Field | Description | Default | Example |
+|-------|-------------|---------|---------|
+| `organization` | Organization name (helps locate job template) | - | `Engineering` |
+| `api` | API path | `/api/controller/v2/` | `/api/controller/v2/` |
+| `extra_vars` | Additional variables for the job | `{}` | `{environment: prod, version: v1.0}` |
+| `limit` | Limit job run to specific hosts | - | `web-servers` |
+| `tags` | Only run plays and tasks tagged with these values | - | `deploy,config` |
+| `skip_tags` | Skip plays and tasks tagged with these values | - | `debug,test` |
+| `inventory_id` | Inventory ID to use (override job template default) | - | `5` |
+| `credential_ids` | List of credential IDs to use | `[]` | `[1, 2, 3]` |
+| `wait` | Wait for job completion before continuing | `false` | `true` |
+| `wait_retries` | Number of times to check job status | `60` | `120` |
+| `wait_delay` | Seconds to wait between status checks | `10` | `15` |
+
+### How Job Launches Work
+
+1. **name** is always required
+2. The role finds the job template by name (optionally filtered by organization)
+3. Launches the job template with specified parameters
+4. If `wait: true`, polls the job status until completion
+5. Fails if `wait: true` and the job fails/errors/is canceled
+6. Returns job ID and URL for monitoring
+
+### Job Launch Examples
+
+**Simple launch:**
+```yaml
+aap_api_job_launches:
+  - name: my-job-template
+    organization: Default
+```
+
+**Launch with variables:**
+```yaml
+aap_api_job_launches:
+  - name: deploy-app
+    organization: Engineering
+    extra_vars:
+      env: production
+      debug: false
+```
+
+**Launch and wait:**
+```yaml
+aap_api_job_launches:
+  - name: provision-infrastructure
+    organization: Operations
+    wait: true
+    wait_retries: 120
+    wait_delay: 15
+    extra_vars:
+      region: us-east-1
+```
 
 ## Supported Credential Types
 

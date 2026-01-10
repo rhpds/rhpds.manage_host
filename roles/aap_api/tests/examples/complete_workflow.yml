@@ -1,0 +1,137 @@
+---
+# Complete workflow example: Create resources, hosts, and launch job template
+
+- name: Complete AAP workflow
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    aap_api_controller_url: https://controller.example.com
+    aap_api_controller_username: admin
+    aap_api_controller_password: secret123
+    aap_api_controller_verify_ssl: false
+
+    # Step 1: Create all necessary resources
+    aap_api_endpoints:
+      # Create organization
+      - name: Engineering
+        endpoint: organizations
+        description: Engineering team
+        attributes:
+          max_hosts: 200
+
+      # Create credential for OpenShift
+      - name: ocp-prod-credential
+        endpoint: credentials
+        description: Production OpenShift cluster
+        organization: Engineering
+        credential_type: OpenShift or Kubernetes API Bearer Token
+        attributes:
+          inputs:
+            host: https://api.ocp.example.com:6443
+            bearer_token: "{{ ocp_token }}"
+            verify_ssl: true
+
+      # Create SSH credential
+      - name: linux-ssh-key
+        endpoint: credentials
+        description: SSH key for Linux servers
+        organization: Engineering
+        credential_type: Machine
+        attributes:
+          inputs:
+            username: ansible
+            ssh_key_data: "{{ lookup('file', '~/.ssh/id_rsa') }}"
+            become_method: sudo
+
+      # Create project
+      - name: automation-playbooks
+        endpoint: projects
+        description: Automation playbooks repository
+        organization: Engineering
+        attributes:
+          scm_type: git
+          scm_url: https://github.com/example/ansible-playbooks.git
+          scm_branch: main
+          scm_update_on_launch: true
+
+      # Create inventory
+      - name: production-servers
+        endpoint: inventories
+        description: Production server inventory
+        organization: Engineering
+        attributes:
+          variables: |
+            ---
+            ansible_connection: ssh
+            ansible_user: ansible
+
+      # Create hosts in inventory
+      - name: web-01
+        endpoint: hosts
+        description: Web server 1
+        inventory: production-servers
+        attributes:
+          variables: |
+            ---
+            ansible_host: 192.168.1.10
+            server_role: web
+          enabled: true
+
+      - name: web-02
+        endpoint: hosts
+        description: Web server 2
+        inventory: production-servers
+        attributes:
+          variables: |
+            ---
+            ansible_host: 192.168.1.11
+            server_role: web
+          enabled: true
+
+      - name: db-01
+        endpoint: hosts
+        description: Database server
+        inventory: production-servers
+        attributes:
+          variables: |
+            ---
+            ansible_host: 192.168.1.20
+            server_role: database
+          enabled: true
+
+      # Create job template
+      - name: deploy-application
+        endpoint: job_templates
+        description: Deploy web application
+        organization: Engineering
+        project: automation-playbooks
+        inventory: production-servers
+        attributes:
+          playbook: deploy-app.yml
+          job_type: run
+          ask_variables_on_launch: true
+          ask_limit_on_launch: true
+
+    # Step 2: Launch the job template
+    aap_api_job_launches:
+      - name: deploy-application
+        organization: Engineering
+        limit: web-01,web-02
+        tags: deploy,nginx
+        wait: true
+        wait_retries: 60
+        wait_delay: 10
+        extra_vars:
+          app_version: v2.1.0
+          environment: production
+          enable_monitoring: true
+
+  roles:
+    - aap_api
+
+  post_tasks:
+    - name: Deployment complete
+      ansible.builtin.debug:
+        msg: "Application deployment workflow completed successfully!"
