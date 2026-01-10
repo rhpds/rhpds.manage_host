@@ -1,0 +1,152 @@
+---
+# Task file for launching AAP Controller job templates
+# Use this to execute job templates on-demand
+
+- name: Set AAP Controller connection variables
+  ansible.builtin.set_fact:
+    _controller_api: "{{ _job_template.api | default('/api/controller/v2/') }}"
+    _controller_url: "{{ aap_api_controller_url }}"
+    _controller_username: "{{ aap_api_controller_username }}"
+    _controller_password: "{{ aap_api_controller_password }}"
+    _controller_verify_ssl: "{{ aap_api_controller_verify_ssl }}"
+    _job_template_name: "{{ _job_template.name }}"
+
+# Get organization ID if specified
+- name: Get organization ID for search
+  ansible.builtin.uri:
+    url: "{{ _controller_url }}{{ _controller_api }}organizations/?name={{ _job_template.organization }}"
+    method: GET
+    user: "{{ _controller_username }}"
+    password: "{{ _controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ _controller_verify_ssl }}"
+    return_content: true
+  register: r_org_response
+  when: _job_template.organization is defined
+
+- name: Set organization ID
+  ansible.builtin.set_fact:
+    _org_id: "{{ r_org_response.json.results[0].id }}"
+  when:
+    - _job_template.organization is defined
+    - r_org_response.json.results | length > 0
+
+# Build search query
+- name: Build search query for job template
+  ansible.builtin.set_fact:
+    _search_params: "name={{ _job_template_name | urlencode }}"
+
+- name: Add organization to search query
+  ansible.builtin.set_fact:
+    _search_params: "{{ _search_params }}&organization={{ _org_id }}"
+  when: _org_id is defined
+
+# Find the job template
+- name: Get job template '{{ _job_template_name }}'
+  ansible.builtin.uri:
+    url: "{{ _controller_url }}{{ _controller_api }}job_templates/?{{ _search_params }}"
+    method: GET
+    user: "{{ _controller_username }}"
+    password: "{{ _controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ _controller_verify_ssl }}"
+    return_content: true
+  register: r_job_template
+
+- name: Validate job template exists
+  ansible.builtin.fail:
+    msg: "Job template '{{ _job_template_name }}' not found in AAP Controller"
+  when: r_job_template.json.results | length == 0
+
+- name: Set job template ID
+  ansible.builtin.set_fact:
+    _job_template_id: "{{ r_job_template.json.results[0].id }}"
+
+# Build launch parameters
+- name: Initialize launch parameters
+  ansible.builtin.set_fact:
+    _launch_params: {}
+
+- name: Add extra_vars to launch parameters
+  ansible.builtin.set_fact:
+    _launch_params: "{{ _launch_params | combine({'extra_vars': _job_template.extra_vars}) }}"
+  when: _job_template.extra_vars is defined
+
+- name: Add limit to launch parameters
+  ansible.builtin.set_fact:
+    _launch_params: "{{ _launch_params | combine({'limit': _job_template.limit}) }}"
+  when: _job_template.limit is defined
+
+- name: Add tags to launch parameters
+  ansible.builtin.set_fact:
+    _launch_params: "{{ _launch_params | combine({'job_tags': _job_template.tags}) }}"
+  when: _job_template.tags is defined
+
+- name: Add skip_tags to launch parameters
+  ansible.builtin.set_fact:
+    _launch_params: "{{ _launch_params | combine({'skip_tags': _job_template.skip_tags}) }}"
+  when: _job_template.skip_tags is defined
+
+- name: Add inventory to launch parameters
+  ansible.builtin.set_fact:
+    _launch_params: "{{ _launch_params | combine({'inventory': _job_template.inventory_id}) }}"
+  when: _job_template.inventory_id is defined
+
+- name: Add credentials to launch parameters
+  ansible.builtin.set_fact:
+    _launch_params: "{{ _launch_params | combine({'credentials': _job_template.credential_ids}) }}"
+  when: _job_template.credential_ids is defined
+
+# Launch the job template
+- name: Launch job template '{{ _job_template_name }}'
+  ansible.builtin.uri:
+    url: "{{ _controller_url }}{{ _controller_api }}job_templates/{{ _job_template_id }}/launch/"
+    method: POST
+    user: "{{ _controller_username }}"
+    password: "{{ _controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ _controller_verify_ssl }}"
+    status_code: [200, 201]
+    body_format: json
+    body: "{{ _launch_params }}"
+  register: r_launch_job
+
+- name: Display job launch result
+  ansible.builtin.debug:
+    msg:
+      - "Job launched successfully!"
+      - "Job Template: {{ _job_template_name }}"
+      - "Job ID: {{ r_launch_job.json.id }}"
+      - "Job URL: {{ _controller_url }}/#/jobs/playbook/{{ r_launch_job.json.id }}"
+      - "Status: {{ r_launch_job.json.status }}"
+
+- name: Wait for job completion
+  ansible.builtin.uri:
+    url: "{{ _controller_url }}{{ _controller_api }}jobs/{{ r_launch_job.json.id }}/"
+    method: GET
+    user: "{{ _controller_username }}"
+    password: "{{ _controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ _controller_verify_ssl }}"
+    return_content: true
+  register: r_job_status
+  until: r_job_status.json.status in ['successful', 'failed', 'error', 'canceled']
+  retries: "{{ _job_template.wait_retries | default(60) }}"
+  delay: "{{ _job_template.wait_delay | default(10) }}"
+  when: _job_template.wait | default(false) | bool
+
+- name: Display final job status
+  ansible.builtin.debug:
+    msg:
+      - "Job completed!"
+      - "Job ID: {{ r_launch_job.json.id }}"
+      - "Final Status: {{ r_job_status.json.status }}"
+      - "Job URL: {{ _controller_url }}/#/jobs/playbook/{{ r_launch_job.json.id }}"
+  when: _job_template.wait | default(false) | bool
+
+- name: Fail if job failed
+  ansible.builtin.fail:
+    msg: "Job {{ r_launch_job.json.id }} failed with status: {{ r_job_status.json.status }}"
+  when:
+    - _job_template.wait | default(false) | bool
+    - r_job_status.json.status in ['failed', 'error', 'canceled']
