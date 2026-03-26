@@ -21,7 +21,23 @@
     removes: "{{ _asset.removes | default(omit) }}"
   register: _uri_result
 
-- name: Set registered variable
-  ansible.builtin.set_fact:
-    "{{ _asset.register }}": "{{ _uri_result }}"
-  when: _asset.register is defined
+- name: Save URI result to file if requested
+  ansible.builtin.copy:
+    content: "{{ _uri_result.json | to_nice_yaml }}"
+    dest: "{{ _asset.save_yaml_to }}"
+  when: _asset.save_yaml_to is defined
+
+- name: Save specific JSON field to file if requested
+  ansible.builtin.copy:
+    content: "{{ _uri_result.json[_asset.save_field] }}"
+    dest: "{{ _asset.save_to }}"
+  when:
+    - _asset.save_to is defined
+    - _asset.save_field is defined
+
+- name: Save multiple fields to files if requested
+  ansible.builtin.copy:
+    content: "{{ _uri_result.json[item.field] }}"
+    dest: "{{ item.file }}"
+  loop: "{{ _asset.save_fields | default([]) }}"
+  when: _asset.save_fields is defined
