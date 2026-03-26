@@ -1,0 +1,27 @@
+---
+
+- name: URI | {{ _asset.description }}
+  become: "{{ _asset.become | default(omit) }}"
+  become_user: "{{ _asset.become_user | default(omit) }}"
+  ansible.builtin.uri:
+    url: "{{ _asset.url }}"
+    method: "{{ _asset.method | default('GET') }}"
+    body: "{{ _asset.body | default(omit) }}"
+    body_format: "{{ _asset.body_format | default(omit) }}"
+    headers: "{{ _asset.headers | default(omit) }}"
+    status_code: "{{ _asset.status_code | default(omit) }}"
+    timeout: "{{ _asset.timeout | default(omit) }}"
+    validate_certs: "{{ _asset.validate_certs | default(omit) }}"
+    url_username: "{{ _asset.url_username | default(omit) }}"
+    url_password: "{{ _asset.url_password | default(omit) }}"
+    force_basic_auth: "{{ _asset.force_basic_auth | default(omit) }}"
+    return_content: "{{ _asset.return_content | default(omit) }}"
+    dest: "{{ _asset.dest | default(omit) }}"
+    creates: "{{ _asset.creates | default(omit) }}"
+    removes: "{{ _asset.removes | default(omit) }}"
+  register: _uri_result
+
+- name: Set registered variable
+  ansible.builtin.set_fact:
+    "{{ _asset.register }}": "{{ _uri_result }}"
+  when: _asset.register is defined
