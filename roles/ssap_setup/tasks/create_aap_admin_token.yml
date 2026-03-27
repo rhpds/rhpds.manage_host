@@ -34,4 +34,5 @@
   ansible.builtin.debug:
     msg:
       - "Admin Personal Access Token Created Successfully"
-      - "Token ID: {{ ssap_aap_admin_token }}"
+      - "Admin Token: {{ ssap_aap_admin_token }}"
+  

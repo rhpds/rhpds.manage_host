@@ -122,8 +122,6 @@ The role creates the following files in `{{ ssap_credentials_dir }}` (default: `
 - `client_secret.txt` - OAuth application client secret
 - `application_id.txt` - OAuth application ID
 - `aap_token.txt` - AAP admin personal access token
-- `oauth_application.yaml` - Full OAuth application response (YAML)
-- `aap_token.yaml` - Full token response (YAML)
 - `portal.env` - Portal environment configuration file
 
 ## Podman Secrets Created
