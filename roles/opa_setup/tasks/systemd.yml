@@ -1,0 +1,50 @@
+---
+# Setup OPA Quadlet service
+
+- name: Create OPA Quadlet container file
+  ansible.builtin.template:
+    src: opa.container.j2
+    dest: "{{ opa_quadlet_file }}"
+    owner: root
+    group: root
+    mode: '0644'
+  register: r_opa_quadlet
+  notify: restart opa
+
+- name: Reload systemd daemon to process Quadlet files
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: r_opa_quadlet.changed
+
+- name: Enable OPA service
+  ansible.builtin.systemd:
+    name: "{{ opa_service_name }}"
+    enabled: "{{ opa_service_enabled }}"
+
+- name: Start OPA service
+  ansible.builtin.systemd:
+    name: "{{ opa_service_name }}"
+    state: "{{ opa_service_state }}"
+  register: r_opa_service
+
+- name: Wait for OPA to be ready
+  ansible.builtin.uri:
+    url: "http://localhost:{{ opa_server_port }}/health"
+    method: GET
+    status_code: 200
+  register: r_opa_health
+  until: r_opa_health.status == 200
+  retries: 10
+  delay: 2
+  when: opa_service_state == "started"
+
+- name: Display OPA service status
+  ansible.builtin.debug:
+    msg:
+      - "OPA Quadlet Service Status:"
+      - "  Container: {{ opa_container_name }}"
+      - "  Image: {{ opa_container_image }}"
+      - "  Service: {{ opa_service_name }}"
+      - "  Enabled: {{ opa_service_enabled }}"
+      - "  State: {{ opa_service_state }}"
+      - "  Health check: {{ 'Passed' if r_opa_health.status == 200 else 'Skipped' }}"

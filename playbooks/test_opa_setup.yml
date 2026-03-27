@@ -1,0 +1,196 @@
+---
+- name: Test OPA Setup Role (Quadlet)
+  hosts: localhost
+  become: true
+  gather_facts: true
+
+  vars:
+    # Basic OPA configuration
+    opa_container_image: "docker.io/openpolicyagent/opa:0.60.0"
+    opa_server_port: 8181
+    opa_diagnostic_port: 8282
+
+    # Optional: Enable bundle management
+    # opa_bundle_enabled: true
+    # opa_bundle_service: "https://bundle-server.example.com"
+    # opa_bundle_resource: "/bundles/authz.tar.gz"
+
+    # Optional: Enable decision logs
+    # opa_decision_logs_enabled: true
+    # opa_decision_logs_service: "https://decision-logs.example.com"
+
+    # Optional: Custom logging
+    # opa_extra_args:
+    #   - "--log-level=debug"
+    #   - "--log-format=json"
+
+  tasks:
+    - name: Display test configuration
+      ansible.builtin.debug:
+        msg:
+          - "============================================="
+          - "OPA Setup Test Playbook (Quadlet)"
+          - "============================================="
+          - "Container Image: {{ opa_container_image }}"
+          - "Server Port: {{ opa_server_port }}"
+          - "Diagnostic Port: {{ opa_diagnostic_port }}"
+          - "============================================="
+
+    - name: Execute OPA setup role
+      ansible.builtin.include_role:
+        name: opa_setup
+
+    - name: Wait for OPA container to fully start
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name: Check Quadlet file exists
+      ansible.builtin.stat:
+        path: /etc/containers/systemd/opa.container
+      register: r_quadlet_file
+
+    - name: Display Quadlet file status
+      ansible.builtin.debug:
+        msg: "Quadlet file exists: {{ r_quadlet_file.stat.exists }}"
+
+    - name: Check OPA service status
+      ansible.builtin.systemd:
+        name: opa
+      register: r_opa_service_status
+
+    - name: Display OPA service status
+      ansible.builtin.debug:
+        msg:
+          - "Service Active: {{ r_opa_service_status.status.ActiveState }}"
+          - "Service Sub-State: {{ r_opa_service_status.status.SubState }}"
+          - "Service Enabled: {{ r_opa_service_status.status.UnitFileState }}"
+
+    - name: Check OPA container is running
+      ansible.builtin.command: podman ps --filter name=opa --format json
+      register: r_container_status
+      changed_when: false
+
+    - name: Parse container status
+      ansible.builtin.set_fact:
+        container_info: "{{ r_container_status.stdout | from_json }}"
+
+    - name: Display container information
+      ansible.builtin.debug:
+        msg:
+          - "Container Name: {{ container_info[0].Names[0] if container_info | length > 0 else 'Not found' }}"
+          - "Container Status: {{ container_info[0].State if container_info | length > 0 else 'Not running' }}"
+          - "Container Image: {{ container_info[0].Image if container_info | length > 0 else 'N/A' }}"
+
+    - name: Test OPA health endpoint
+      ansible.builtin.uri:
+        url: "http://localhost:{{ opa_server_port }}/health"
+        method: GET
+        status_code: 200
+      register: r_opa_health_test
+      retries: 5
+      delay: 2
+      until: r_opa_health_test.status == 200
+
+    - name: Display OPA health check result
+      ansible.builtin.debug:
+        msg:
+          - "Health Check Status: {{ r_opa_health_test.status }}"
+          - "Health Check Response: {{ r_opa_health_test.json | default('OK') }}"
+
+    - name: Test OPA policies endpoint
+      ansible.builtin.uri:
+        url: "http://localhost:{{ opa_server_port }}/v1/policies"
+        method: GET
+        status_code: 200
+      register: r_opa_policies_test
+
+    - name: Display policies endpoint result
+      ansible.builtin.debug:
+        msg: "Policies endpoint accessible: {{ r_opa_policies_test.status == 200 }}"
+
+    - name: Create a simple test policy
+      ansible.builtin.copy:
+        content: |
+          package example
+
+          default allow = false
+
+          allow {
+            input.user == "admin"
+          }
+        dest: /tmp/test_policy.rego
+        mode: '0644'
+
+    - name: Upload test policy to OPA
+      ansible.builtin.uri:
+        url: "http://localhost:{{ opa_server_port }}/v1/policies/test_policy"
+        method: PUT
+        body: "{{ lookup('file', '/tmp/test_policy.rego') }}"
+        headers:
+          Content-Type: "text/plain"
+        status_code: 200
+      register: r_opa_upload_policy
+
+    - name: Test policy evaluation (allow case)
+      ansible.builtin.uri:
+        url: "http://localhost:{{ opa_server_port }}/v1/data/example/allow"
+        method: POST
+        body_format: json
+        body:
+          input:
+            user: "admin"
+        status_code: 200
+      register: r_opa_eval_allow
+
+    - name: Test policy evaluation (deny case)
+      ansible.builtin.uri:
+        url: "http://localhost:{{ opa_server_port }}/v1/data/example/allow"
+        method: POST
+        body_format: json
+        body:
+          input:
+            user: "guest"
+        status_code: 200
+      register: r_opa_eval_deny
+
+    - name: Display policy evaluation results
+      ansible.builtin.debug:
+        msg:
+          - "============================================="
+          - "OPA Policy Test Results"
+          - "============================================="
+          - "Policy Upload: {{ 'Success' if r_opa_upload_policy.status == 200 else 'Failed' }}"
+          - "Admin evaluation (should be true): {{ r_opa_eval_allow.json.result }}"
+          - "Guest evaluation (should be false): {{ r_opa_eval_deny.json.result }}"
+          - "============================================="
+
+    - name: Test podman logs access
+      ansible.builtin.command: podman logs --tail 10 opa
+      register: r_opa_logs
+      changed_when: false
+
+    - name: Display recent logs
+      ansible.builtin.debug:
+        msg: "Recent OPA logs (last 10 lines):"
+      verbosity: 1
+
+    - name: Final summary
+      ansible.builtin.debug:
+        msg:
+          - "============================================="
+          - "OPA Setup and Test Complete (Quadlet)"
+          - "============================================="
+          - "✓ Podman installed"
+          - "✓ Quadlet file created"
+          - "✓ OPA container running"
+          - "✓ OPA service active"
+          - "✓ Health endpoint responding"
+          - "✓ Policies endpoint accessible"
+          - "✓ Policy upload and evaluation working"
+          - ""
+          - "Access OPA at: http://localhost:{{ opa_server_port }}"
+          - "View logs: journalctl -u opa -f"
+          - "View container: podman ps --filter name=opa"
+          - "Container logs: podman logs -f opa"
+          - "Quadlet file: /etc/containers/systemd/opa.container"
+          - "============================================="

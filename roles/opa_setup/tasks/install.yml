@@ -1,0 +1,57 @@
+---
+# Setup OPA prerequisites for Quadlet
+
+- name: Ensure podman is installed
+  ansible.builtin.package:
+    name: podman
+    state: present
+
+- name: Create OPA group
+  ansible.builtin.group:
+    name: "{{ opa_group }}"
+    gid: "{{ opa_gid }}"
+    state: present
+    system: true
+
+- name: Create OPA user
+  ansible.builtin.user:
+    name: "{{ opa_user }}"
+    uid: "{{ opa_uid }}"
+    group: "{{ opa_group }}"
+    home: "{{ opa_home_dir }}"
+    shell: /sbin/nologin
+    system: true
+    create_home: false
+    state: present
+
+- name: Create OPA directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ opa_user }}"
+    group: "{{ opa_group }}"
+    mode: '0755'
+  loop:
+    - "{{ opa_home_dir }}"
+    - "{{ opa_config_dir }}"
+    - "{{ opa_data_dir }}"
+    - "{{ opa_policy_dir }}"
+    - "{{ opa_log_dir }}"
+
+- name: Create Quadlet directory
+  ansible.builtin.file:
+    path: "{{ opa_quadlet_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Pull OPA container image
+  containers.podman.podman_image:
+    name: "{{ opa_container_image }}"
+    state: present
+  register: r_opa_image_pull
+
+- name: Display OPA image details
+  ansible.builtin.debug:
+    msg: "OPA container image pulled: {{ opa_container_image }}"

@@ -1,0 +1,15 @@
+---
+# OPA Handlers
+
+- name: restart opa
+  ansible.builtin.systemd:
+    name: "{{ opa_service_name }}"
+    state: restarted
+    daemon_reload: true
+  when: opa_service_state == "started"
+
+- name: reload opa
+  ansible.builtin.systemd:
+    name: "{{ opa_service_name }}"
+    state: reloaded
+  when: opa_service_state == "started"

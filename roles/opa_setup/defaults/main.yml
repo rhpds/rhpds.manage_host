@@ -1,0 +1,93 @@
+---
+# OPA Setup Role - Default Variables (Quadlet)
+
+# ------------------------------------------------------
+# OPA Container Image
+# ------------------------------------------------------
+opa_container_image: "docker.io/openpolicyagent/opa:0.60.0"
+opa_pull_policy: "missing"
+
+# ------------------------------------------------------
+# OPA User and Directories
+# ------------------------------------------------------
+opa_user: opa
+opa_group: opa
+opa_uid: 1001
+opa_gid: 1001
+opa_home_dir: "/opt/opa"
+opa_config_dir: "/etc/opa"
+opa_data_dir: "/var/lib/opa"
+opa_log_dir: "/var/log/opa"
+opa_policy_dir: "/var/lib/opa/policies"
+
+# ------------------------------------------------------
+# Quadlet Configuration
+# ------------------------------------------------------
+opa_quadlet_dir: "/etc/containers/systemd"
+opa_quadlet_file: "{{ opa_quadlet_dir }}/opa.container"
+opa_service_name: opa
+opa_container_name: opa
+
+# ------------------------------------------------------
+# OPA Service Configuration
+# ------------------------------------------------------
+opa_service_enabled: true
+opa_service_state: started
+
+# ------------------------------------------------------
+# OPA Server Configuration
+# ------------------------------------------------------
+opa_server_port: 8181
+opa_diagnostic_port: 8282
+opa_server_addr: "0.0.0.0:{{ opa_server_port }}"
+opa_diagnostic_addr: "0.0.0.0:{{ opa_diagnostic_port }}"
+
+# Server mode: server or run
+opa_mode: server
+
+# Bundle configuration (optional)
+opa_bundle_enabled: false
+opa_bundle_service: ""
+opa_bundle_resource: ""
+opa_bundle_polling_min_delay: 60
+opa_bundle_polling_max_delay: 120
+
+# Decision logs (optional)
+opa_decision_logs_enabled: false
+opa_decision_logs_service: ""
+opa_decision_logs_resource: ""
+
+# Status updates (optional)
+opa_status_enabled: false
+opa_status_service: ""
+
+# ------------------------------------------------------
+# OPA Configuration File
+# ------------------------------------------------------
+opa_config_file: "{{ opa_config_dir }}/config.yaml"
+opa_use_config_file: true
+
+# ------------------------------------------------------
+# Container Configuration
+# ------------------------------------------------------
+opa_restart_policy: "always"
+opa_timezone: "UTC"
+
+# SELinux labels for volumes
+opa_volume_selinux_label: "Z"
+
+# ------------------------------------------------------
+# Custom OPA arguments
+# ------------------------------------------------------
+opa_extra_args: []
+# Example:
+# opa_extra_args:
+#   - "--log-level=debug"
+#   - "--log-format=json"
+
+# ------------------------------------------------------
+# Network Configuration
+# ------------------------------------------------------
+opa_publish_ports:
+  - "{{ opa_server_port }}:8181"
+  - "{{ opa_diagnostic_port }}:8282"

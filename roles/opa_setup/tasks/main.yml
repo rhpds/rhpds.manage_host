@@ -1,0 +1,40 @@
+---
+# OPA Setup Role - Main Tasks
+# Installs and configures Open Policy Agent with Podman Quadlet
+
+- name: Install OPA prerequisites and pull container
+  ansible.builtin.include_tasks: install.yml
+
+- name: Configure OPA
+  ansible.builtin.include_tasks: configure.yml
+
+- name: Setup OPA Quadlet service
+  ansible.builtin.include_tasks: systemd.yml
+
+- name: Display OPA setup summary
+  ansible.builtin.debug:
+    msg:
+      - "============================================="
+      - "OPA Setup Complete (Quadlet)"
+      - "============================================="
+      - "Container Image: {{ opa_container_image }}"
+      - "Container Name: {{ opa_container_name }}"
+      - "Quadlet File: {{ opa_quadlet_file }}"
+      - "Config File: {{ opa_config_file }}"
+      - "Data Directory: {{ opa_data_dir }}"
+      - "Policy Directory: {{ opa_policy_dir }}"
+      - ""
+      - "Service: {{ opa_service_name }}"
+      - "Server Port: {{ opa_server_port }}"
+      - "Diagnostic Port: {{ opa_diagnostic_port }}"
+      - ""
+      - "Management Commands:"
+      - "  systemctl status {{ opa_service_name }}"
+      - "  systemctl restart {{ opa_service_name }}"
+      - "  journalctl -u {{ opa_service_name }} -f"
+      - "  podman ps --filter name={{ opa_container_name }}"
+      - "  podman logs {{ opa_container_name }}"
+      - ""
+      - "API Health Check:"
+      - "  curl http://localhost:{{ opa_server_port }}/health"
+      - "============================================="
