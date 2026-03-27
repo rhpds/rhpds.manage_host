@@ -45,4 +45,8 @@ ssap_postgresql_port: 5432
 ssap_postgresql_database: portal_db
 ssap_postgresql_user: portal_user
 ssap_base_url: https://ssap-portal-{{ subdomain }}
-ssap_portal_host_port: 443
+ssap_portal_host_port: 7007
+# Following should be changed
+ssap_backend_secret: ARV8KQTEVUkplHRl1qmbuUTk
+ssap_postgresql_password: ARV8KQTEVUkplHRl1qmbuUTk
+ssap_postgresql_admin_password: ARV8KQTEVUkplHRl1qmbuUTk
