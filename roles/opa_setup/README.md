@@ -403,3 +403,28 @@ Apache-2.0
 ## Author Information
 
 Created by Mitesh Sharma for RHDP at Red Hat.
+
+## Common Issues
+
+### Cannot view systemd journal logs
+
+**Problem**: When running `journalctl -u opa`, you get:
+```
+No journal files were opened due to insufficient permissions.
+```
+
+**Solution**: Use one of these alternatives:
+
+```bash
+# Option 1: Use sudo
+sudo journalctl -u opa -f
+
+# Option 2: Add user to systemd-journal group (requires logout/login)
+sudo usermod -aG systemd-journal $USER
+
+# Option 3: Use podman logs instead (no special permissions needed)
+podman logs -f opa
+```
+
+**Best Practice**: For containerized services, use `podman logs` as it doesn't require special permissions and shows the same container output.
+

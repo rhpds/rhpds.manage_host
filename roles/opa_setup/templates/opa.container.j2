@@ -46,14 +46,10 @@ Exec=run --server --addr={{ opa_server_addr }} {{ opa_extra_args | join(' ') }}
 
 # Auto-update and restart
 AutoUpdate=registry
-Notify=healthy
 
-# Health check
-HealthCmd=curl -f http://localhost:8181/health || exit 1
-HealthInterval=30s
-HealthTimeout=5s
-HealthRetries=3
-HealthStartPeriod=10s
+# Note: Health check removed - OPA container is minimal and doesn't include curl/wget
+# Container health can be verified by checking the API endpoint from the host:
+#   curl http://localhost:8181/health
 
 [Service]
 # Restart policy

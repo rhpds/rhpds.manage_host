@@ -57,7 +57,7 @@ server:
   addr: {{ opa_server_addr }}
   diagnostic_addr: {{ opa_diagnostic_addr }}
 
-# Storage
+# Storage (using container paths, not host paths)
 storage:
   disk:
-    directory: {{ opa_data_dir }}
+    directory: /data
