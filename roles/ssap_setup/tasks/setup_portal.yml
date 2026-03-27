@@ -6,10 +6,10 @@
     dest: "{{ ssap_portal_env_file }}"
     mode: '0600'
 
-- name: Run ssap portal setup
-  ansible.builtin.shell: portal-setup -c {{ ssap_portal_env_file }} -y
-  register: r_portal_setup
-  changed_when: r_portal_setup.rc == 0
+# - name: Run ssap portal setup
+#   ansible.builtin.shell: portal-setup -c {{ ssap_portal_env_file }} -y
+#   register: r_portal_setup
+#   changed_when: r_portal_setup.rc == 0
 
 - name: Display portal configuration details
   ansible.builtin.debug:
