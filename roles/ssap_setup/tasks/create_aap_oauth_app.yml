@@ -1,0 +1,55 @@
+---
+# Create OAuth Application in AAP Controller for SSAP
+- name: Create OAuth application in AAP
+  ansible.builtin.uri:
+    url: "{{ ssap_aap_url }}/api/gateway/v1/applications/"
+    method: POST
+    body_format: json
+    body:
+      name: "{{ ssap_aap_oauth_application_name_prefix }}-{{ 999999 | random }}"
+      redirect_uris: "{{ ssap_base_url }}/api/auth/rhaap/handler/frame"
+      description: "SSAP Oauth Application"
+      organization: "{{ ssap_aap_oauth_organization_id }}"
+      client_type: "{{ ssap_aap_oauth_client_type }}"
+      authorization_grant_type: "{{ ssap_aap_oauth_grant_type }}"
+    headers:
+      Content-Type: "application/json"
+    url_username: "{{ ssap_aap_username }}"
+    url_password: "{{ ssap_aap_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [200, 201]
+  register: r_ssap_aap_oauth_app
+
+- name: Extract OAuth credentials
+  ansible.builtin.set_fact:
+    ssap_aap_oauth_client_id: "{{ r_ssap_aap_oauth_app.json.client_id }}"
+    ssap_aap_oauth_client_secret: "{{ r_ssap_aap_oauth_app.json.client_secret }}"
+    ssap_aap_oauth_application_id: "{{ r_ssap_aap_oauth_app.json.id }}"
+
+- name: Save OAuth client ID to file
+  ansible.builtin.copy:
+    content: "{{ ssap_aap_oauth_client_id }}"
+    dest: "{{ ssap_aap_client_id_file }}"
+    mode: '0600'
+
+- name: Save OAuth client secret to file
+  ansible.builtin.copy:
+    content: "{{ ssap_aap_oauth_client_secret }}"
+    dest: "{{ ssap_aap_client_secret_file }}"
+    mode: '0600'
+
+- name: Save OAuth application ID to file
+  ansible.builtin.copy:
+    content: "{{ ssap_aap_oauth_application_id }}"
+    dest: "{{ ssap_aap_oauth_application_id_file }}"
+    mode: '0600'
+
+- name: Display OAuth application details
+  ansible.builtin.debug:
+    msg:
+      - "OAuth Application Created Successfully"
+      - "Application ID: {{ ssap_aap_oauth_application_id }}"
+      - "Client ID: {{ ssap_aap_oauth_client_id }}"
+      - "Client Secret: {{ ssap_aap_oauth_client_secret }}"
+      - "Redirect URI: {{ ssap_base_url }}/api/auth/rhaap/handler/frame"

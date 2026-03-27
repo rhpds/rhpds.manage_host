@@ -1,0 +1,37 @@
+---
+# Create Personal Access Token for AAP Admin User
+
+- name: Create personal access token for admin user
+  ansible.builtin.uri:
+    url: "{{ ssap_aap_url }}/api/gateway/v1/tokens/"
+    method: POST
+    body_format: json
+    body:
+      description: "Admin personal access token"
+      application: "{{ ssap_aap_oauth_application_id }}"
+      scope: "write"
+    headers:
+      Content-Type: "application/json"
+    url_username: "{{ ssap_aap_username }}"
+    url_password: "{{ ssap_aap_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [200, 201]
+  register: r_ssap_aap_admin_token
+
+- name: Extract admin token details
+  ansible.builtin.set_fact:
+    ssap_aap_admin_token: "{{ r_ssap_aap_admin_token.json.token }}"
+    ssap_aap_admin_token_id: "{{ r_ssap_aap_admin_token.json.id }}"
+
+- name: Save AAP admin token to file
+  ansible.builtin.copy:
+    content: "{{ ssap_aap_admin_token }}"
+    dest: "{{ ssap_aap_token_file }}"
+    mode: '0600'
+
+- name: Display admin token details
+  ansible.builtin.debug:
+    msg:
+      - "Admin Personal Access Token Created Successfully"
+      - "Token ID: {{ ssap_aap_admin_token }}"

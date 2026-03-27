@@ -1,0 +1,48 @@
+---
+# SSAP Setup Role - Default Variables
+# ------------------------------------------------------
+# AAP OAuth Application Configuration
+# ------------------------------------------------------
+ssap_aap_oauth_application_name_prefix: "Selfservice"
+ssap_aap_oauth_organization_id: 1
+ssap_aap_oauth_client_type: "confidential"
+ssap_aap_oauth_grant_type: "authorization-code"
+ssap_aap_url: "https://controller-{{ subdomain }}"
+ssap_aap_username: admin
+ssap_aap_password: "{{ aap_image_admin_password }}"
+
+ssap_credentials_dir: "/tmp"
+ssap_aap_client_id_file: "{{ ssap_credentials_dir }}/client_id.txt"
+ssap_aap_client_secret_file: "{{ ssap_credentials_dir }}/client_secret.txt"
+ssap_aap_oauth_application_id_file: "{{ ssap_credentials_dir }}/application_id.txt"
+ssap_aap_token_file: "{{ ssap_credentials_dir }}/aap_token.txt"
+
+# ------------------------------------------------------
+# Podman Configuration
+# ------------------------------------------------------
+ssap_podman_registry_username: "{{ registry_credentials_username }}"
+ssap_podman_registry_password: "{{ registry_credentials_password }}"
+ssap_podman_authfile: "/etc/containers/auth.json"
+ssap_podman_secret_oauth_name: "portal_aap_oauth_client_secret"
+ssap_podman_secret_token_name: "portal_aap_token"
+
+# ------------------------------------------------------
+# Container Images
+# ------------------------------------------------------
+ssap_postgresql_image: "registry.redhat.io/rhel9/postgresql-15:latest"
+ssap_ansible_devtools_image: "registry.redhat.io/ansible-automation-platform-26/ansible-dev-tools-rhel9:latest"
+ssap_rhdh_image: "registry.redhat.io/rhdh/rhdh-hub-rhel9:1.8"
+
+# ------------------------------------------------------
+# Portal Configuration
+# ------------------------------------------------------
+ssap_portal_env_file: "{{ ssap_credentials_dir }}/portal.env"
+ssap_aap_check_ssl: false
+ssap_portal_environment: production
+ssap_use_external_postgres: false
+ssap_postgresql_host: portal-postgres
+ssap_postgresql_port: 5432
+ssap_postgresql_database: portal_db
+ssap_postgresql_user: portal_user
+ssap_base_url: https://ssap-portal-{{ subdomain }}
+ssap_portal_host_port: 443

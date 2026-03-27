@@ -1,0 +1,23 @@
+---
+# Generate SSAP Portal Configuration File
+- name: Create portal environment configuration file
+  ansible.builtin.template:
+    src: portal.env.j2
+    dest: "{{ ssap_portal_env_file }}"
+    mode: '0600'
+
+- description: Run ssap portal setup
+  ansible.builtin.shell: portal-setup -c {{ ssap_portal_env_file }} -y
+
+- name: Display portal configuration details
+  ansible.builtin.debug:
+    msg:
+      - "Portal Configuration Generated Successfully"
+      - "Configuration file: {{ ssap_portal_env_file }}"
+      - ""
+      - "Portal Environment Variables:"
+      - "  AAP_HOST_URL: {{ ssap_aap_url }}"
+      - "  BASE_URL: {{ ssap_base_url }}"
+      - "  PORTAL_ENVIRONMENT: {{ ssap_portal_environment }}"
+      - "  POSTGRESQL_HOST: {{ ssap_postgresql_host }}"
+      - "  PORTAL_HOST_PORT: {{ ssap_portal_host_port }}"

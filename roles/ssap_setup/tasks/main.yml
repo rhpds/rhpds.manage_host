@@ -1,0 +1,32 @@
+---
+# SSAP Setup Role - Main Tasks
+# Configures SSAP portal with AAP OAuth integration and container setup
+
+- name: Create AAP OAuth application
+  ansible.builtin.include_tasks: create_aap_oauth_app.yml
+
+- name: Create AAP admin personal access token
+  ansible.builtin.include_tasks: create_aap_admin_token.yml
+
+- name: Setup container registry and pull images
+  ansible.builtin.include_tasks: setup_containers.yml
+
+- name: Generate portal configuration
+  ansible.builtin.include_tasks: setup_portal.yml
+
+- name: Display SSAP setup summary
+  ansible.builtin.debug:
+    msg:
+      - "============================================="
+      - "SSAP Setup Complete"
+      - "============================================="
+      - "OAuth Application ID: {{ ssap_aap_oauth_application_id | default('N/A') }}"
+      - "OAuth Client ID: {{ ssap_aap_oauth_client_id | default('N/A') }}"
+      - "AAP Token ID: {{ ssap_aap_admin_token_id | default('N/A') }}"
+      - ""
+      - "Portal URL: {{ ssap_base_url }}"
+      - "AAP Controller URL: {{ ssap_aap_url }}"
+      - ""
+      - "Credentials saved to: {{ ssap_credentials_dir }}"
+      - "Portal config: {{ ssap_portal_env_file }}"
+      - "============================================="

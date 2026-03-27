@@ -1,0 +1,62 @@
+---
+# Setup Container Registry and Pull Required Images
+
+- name: Podman login to registry.redhat.io
+  ansible.builtin.shell: >-
+    podman login registry.redhat.io
+    -u {{ ssap_podman_registry_username }}
+    -p {{ ssap_podman_registry_password }}
+    --authfile {{ ssap_podman_authfile }}
+  register: r_ssap_podman_login
+  changed_when: "'Login Succeeded' in r_ssap_podman_login.stdout"
+
+
+- name: Pull PostgreSQL container image
+  ansible.builtin.shell: >-
+    podman pull --authfile {{ ssap_podman_authfile }}
+    {{ ssap_postgresql_image }}
+  register: r_pull_postgresql
+  changed_when: "'Downloaded newer image' in r_pull_postgresql.stdout or 'Pulling' in r_pull_postgresql.stdout"
+
+- name: Pull Ansible Dev Tools container image
+  ansible.builtin.shell: >-
+    podman pull --authfile {{ ssap_podman_authfile }}
+    {{ ssap_ansible_devtools_image }}
+  register: r_pull_devtools
+  changed_when: "'Downloaded newer image' in r_pull_devtools.stdout or 'Pulling' in r_pull_devtools.stdout"
+
+- name: Pull RHDH Hub container image
+  ansible.builtin.shell: >-
+    podman pull --authfile {{ ssap_podman_authfile }}
+    {{ ssap_rhdh_image }}
+  register: r_pull_rhdh
+  changed_when: "'Downloaded newer image' in r_pull_rhdh.stdout or 'Pulling' in r_pull_rhdh.stdout"
+
+# Create Podman Secrets for SSAP Configuration
+- name: Check if OAuth client secret already exists in podman
+  ansible.builtin.shell: podman secret ls --format json | jq -r '.[].Name'
+  register: r_existing_secrets
+  changed_when: false
+  failed_when: false
+
+- name: Remove existing OAuth client secret if present
+  ansible.builtin.shell: podman secret rm {{ ssap_podman_secret_oauth_name }}
+  when: ssap_podman_secret_oauth_name in r_existing_secrets.stdout_lines
+  register: r_rm_oauth_secret
+  failed_when: false
+
+- name: Create podman secret for OAuth client secret
+  ansible.builtin.shell: podman secret create {{ ssap_podman_secret_oauth_name }} {{ ssap_aap_client_secret_file }}
+  register: r_create_oauth_secret
+  changed_when: r_create_oauth_secret.rc == 0
+
+- name: Remove existing AAP token secret if present
+  ansible.builtin.shell: podman secret rm {{ ssap_podman_secret_token_name }}
+  when: ssap_podman_secret_token_name in r_existing_secrets.stdout_lines
+  register: r_rm_token_secret
+  failed_when: false
+
+- name: Create podman secret for AAP token
+  ansible.builtin.shell: podman secret create {{ ssap_podman_secret_token_name }} {{ ssap_aap_token_file }}
+  register: r_create_token_secret
+  changed_when: r_create_token_secret.rc == 0
