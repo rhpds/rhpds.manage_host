@@ -8,11 +8,18 @@
     authfile: "{{ ssap_podman_authfile }}"
   register: r_ssap_podman_login
 
-- name: Copy /etc/containers/auth.json
+- name: Ensure user containers config directory exists
+  ansible.builtin.file:
+    path: "/root/.config/containers"
+    state: directory
+    mode: '0700'
+
+- name: Copy auth.json to user config directory
   ansible.builtin.copy:
-    src: /etc/containers/auth.json
-    dest: /root/.config/containers/auth.json
+    src: "{{ ssap_podman_authfile }}"
+    dest: "/root/.config/containers/auth.json"
     remote_src: true
+    mode: '0600'
 
 - name: Pull PostgreSQL container image
   containers.podman.podman_image:
@@ -69,3 +76,15 @@
     data: "{{ ssap_aap_admin_token }}"
     state: present
     force: true
+
+- name: Display container setup summary
+  ansible.builtin.debug:
+    msg:
+      - "Container Images Pulled Successfully:"
+      - "  - PostgreSQL: {{ ssap_postgresql_image }}"
+      - "  - Ansible Dev Tools: {{ ssap_ansible_devtools_image }}"
+      - "  - RHDH Hub: {{ ssap_rhdh_image }}"
+      - ""
+      - "Podman Secrets Created:"
+      - "  - {{ ssap_podman_secret_oauth_name }}"
+      - "  - {{ ssap_podman_secret_token_name }}"
