@@ -16,9 +16,10 @@ Pull={{ opa_pull_policy }}
 # Container name
 ContainerName={{ opa_container_name }}
 
-# Run as user
-User={{ opa_uid }}
-Group={{ opa_gid }}
+{% if opa_container_user %}
+# Run as specific user inside container
+User={{ opa_container_user }}
+{% endif %}
 
 # Volume mounts
 {% if opa_use_config_file %}

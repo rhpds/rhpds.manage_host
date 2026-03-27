@@ -7,12 +7,11 @@ This Ansible role installs and configures Open Policy Agent (OPA) as a container
 The `opa_setup` role performs the following tasks:
 
 1. **Podman Installation** - Ensures Podman is installed
-2. **User and Group Creation** - Creates a dedicated OPA system user and group
-3. **Directory Structure** - Creates required directories for config, data, policies, and logs
-4. **Container Image** - Pulls the official OPA container image
-5. **Quadlet Configuration** - Generates Podman Quadlet `.container` file
-6. **Systemd Service** - Systemd automatically manages the container as a service via Quadlet
-7. **Health Checking** - Verifies OPA service is running and healthy
+2. **Directory Structure** - Creates required directories for config, data, policies, and logs
+3. **Container Image** - Pulls the official OPA container image
+4. **Quadlet Configuration** - Generates Podman Quadlet `.container` file
+5. **Systemd Service** - Systemd automatically manages the container as a service via Quadlet
+6. **Health Checking** - Verifies OPA service is running and healthy
 
 ## What is Podman Quadlet?
 
@@ -42,22 +41,17 @@ opa_container_image: "docker.io/openpolicyagent/opa:0.60.0"
 opa_pull_policy: "missing"
 ```
 
-### User and Directory Variables
+### Directory Variables
 
 ```yaml
-# OPA system user and group
-opa_user: opa
-opa_group: opa
-opa_uid: 1001
-opa_gid: 1001
-
 # Directory paths
-opa_home_dir: "/opt/opa"
 opa_config_dir: "/etc/opa"
 opa_data_dir: "/var/lib/opa"
 opa_log_dir: "/var/log/opa"
 opa_policy_dir: "/var/lib/opa/policies"
 ```
+
+**Note**: No system user/group is created. The OPA container runs with its default non-root user (UID 1000), and directories are created with world-writable permissions for the container to access.
 
 ### Quadlet Configuration
 
@@ -99,6 +93,9 @@ opa_timezone: "UTC"
 
 # SELinux labels for volumes
 opa_volume_selinux_label: "Z"
+
+# Optional: Specify container user (empty = use container default)
+opa_container_user: ""
 ```
 
 ### Bundle Configuration (Optional)
@@ -179,34 +176,6 @@ None.
     - opa_setup
 ```
 
-### High-Availability Setup
-
-```yaml
----
-- name: Install OPA cluster with Quadlet
-  hosts: opa_cluster
-  become: true
-
-  vars:
-    opa_container_image: "docker.io/openpolicyagent/opa:0.60.0"
-    
-    # Use different ports per host
-    opa_server_port: "{{ 8181 + ansible_play_hosts.index(inventory_hostname) }}"
-    opa_diagnostic_port: "{{ 8282 + ansible_play_hosts.index(inventory_hostname) }}"
-
-    opa_bundle_enabled: true
-    opa_bundle_service: "https://bundle-server.example.com"
-    opa_bundle_resource: "/bundles/authz.tar.gz"
-    opa_bundle_polling_min_delay: 30
-    opa_bundle_polling_max_delay: 60
-
-    opa_status_enabled: true
-    opa_status_service: "https://status-collector.example.com"
-
-  roles:
-    - opa_setup
-```
-
 ## Post-Installation
 
 ### Verify Installation
@@ -261,9 +230,6 @@ systemctl restart opa
 # Enable on boot
 systemctl enable opa
 
-# Disable on boot
-systemctl disable opa
-
 # Reload Quadlet configuration
 systemctl daemon-reload
 ```
@@ -294,7 +260,6 @@ systemctl restart opa
 After installation, the following structure is created:
 
 ```
-/opt/opa/                     # OPA home directory
 /etc/opa/                     # Configuration files
   └── config.yaml             # Main OPA configuration
 /var/lib/opa/                 # Data directory (mounted to container)
@@ -303,6 +268,8 @@ After installation, the following structure is created:
 /etc/containers/systemd/      # Quadlet directory
   └── opa.container           # Quadlet container definition
 ```
+
+**Note**: Directories are created with 0777 permissions to allow the container's default user (UID 1000) to write to them. In production, consider more restrictive permissions or using user namespaces.
 
 ## API Endpoints
 
@@ -326,8 +293,6 @@ After=network-online.target
 [Container]
 Image=docker.io/openpolicyagent/opa:0.60.0
 ContainerName=opa
-User=1001
-Group=1001
 Volume=/etc/opa/config.yaml:/config/config.yaml:ro,Z
 Volume=/var/lib/opa:/data:Z
 PublishPort=8181:8181
@@ -351,6 +316,15 @@ WantedBy=multi-user.target
 4. **Health Checks**: Native container health monitoring
 5. **Simple**: No need to write complex systemd unit files
 6. **Portable**: Easy to version control and deploy
+7. **No Custom Users**: Container isolation handles security
+
+## Security Considerations
+
+- Container runs as non-root user (UID 1000 inside container)
+- SELinux volume labels (`:Z`) for proper isolation
+- Health checks for automatic restart on failure
+- Read-only config volume mount
+- No system user creation needed - container handles isolation
 
 ## Troubleshooting
 
@@ -375,10 +349,14 @@ podman logs opa
 ### Permission issues
 
 ```bash
-# Fix directory ownership
-chown -R 1001:1001 /var/lib/opa /var/log/opa
+# Verify directory permissions
+ls -la /var/lib/opa
+ls -la /var/log/opa
 
-# Verify SELinux labels
+# Ensure directories are writable
+chmod 777 /var/lib/opa /var/log/opa
+
+# Check SELinux labels
 ls -laZ /var/lib/opa
 ls -laZ /var/log/opa
 
@@ -417,14 +395,6 @@ systemctl restart opa
 # Or enable auto-update
 podman auto-update
 ```
-
-## Security Considerations
-
-- Runs as unprivileged UID/GID (1001:1001)
-- SELinux volume labels (`:Z`) for proper isolation
-- Health checks for automatic restart on failure
-- Read-only config volume mount
-- Systemd security features via Quadlet
 
 ## License
 

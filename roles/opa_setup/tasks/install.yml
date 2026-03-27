@@ -6,37 +6,27 @@
     name: podman
     state: present
 
-- name: Create OPA group
-  ansible.builtin.group:
-    name: "{{ opa_group }}"
-    gid: "{{ opa_gid }}"
-    state: present
-    system: true
-
-- name: Create OPA user
-  ansible.builtin.user:
-    name: "{{ opa_user }}"
-    uid: "{{ opa_uid }}"
-    group: "{{ opa_group }}"
-    home: "{{ opa_home_dir }}"
-    shell: /sbin/nologin
-    system: true
-    create_home: false
-    state: present
-
 - name: Create OPA directories
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    owner: "{{ opa_user }}"
-    group: "{{ opa_group }}"
     mode: '0755'
   loop:
-    - "{{ opa_home_dir }}"
     - "{{ opa_config_dir }}"
     - "{{ opa_data_dir }}"
     - "{{ opa_policy_dir }}"
     - "{{ opa_log_dir }}"
+
+- name: Set appropriate permissions for data directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0777'  # Allow container user to write
+    recurse: false
+  loop:
+    - "{{ opa_data_dir }}"
+    - "{{ opa_log_dir }}"
+    - "{{ opa_policy_dir }}"
 
 - name: Create Quadlet directory
   ansible.builtin.file:

@@ -5,23 +5,9 @@
   ansible.builtin.template:
     src: opa-config.yaml.j2
     dest: "{{ opa_config_file }}"
-    owner: "{{ opa_user }}"
-    group: "{{ opa_group }}"
     mode: '0644'
   when: opa_use_config_file
   notify: restart opa
-
-- name: Set proper ownership on OPA directories
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    owner: "{{ opa_user }}"
-    group: "{{ opa_group }}"
-    recurse: true
-  loop:
-    - "{{ opa_data_dir }}"
-    - "{{ opa_log_dir }}"
-    - "{{ opa_policy_dir }}"
 
 - name: Display configuration details
   ansible.builtin.debug:
@@ -29,7 +15,7 @@
       - "OPA Configuration:"
       - "  Config file: {{ opa_config_file }}"
       - "  Server mode: {{ opa_mode }}"
-      - "  Server address: {{ opa_server_addr }}"
-      - "  Diagnostic address: {{ opa_diagnostic_addr }}"
+      - "  Server port: {{ opa_server_port }}"
+      - "  Diagnostic port: {{ opa_diagnostic_port }}"
       - "  Bundle enabled: {{ opa_bundle_enabled }}"
       - "  Decision logs enabled: {{ opa_decision_logs_enabled }}"
