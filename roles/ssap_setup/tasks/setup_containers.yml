@@ -21,70 +21,75 @@
     remote_src: true
     mode: '0600'
 
-# - name: Pull PostgreSQL container image
-#   containers.podman.podman_image:
-#     name: "{{ ssap_postgresql_image }}"
-#     state: present
-#     auth_file: "{{ ssap_podman_authfile }}"
-#   register: r_pull_postgresql
+- name: Change file permissions
+  ansible.builtin.file:
+    path: "{{ ssap_podman_authfile }}"
+    mode: '0644'
 
-# - name: Pull Ansible Dev Tools container image
-#   containers.podman.podman_image:
-#     name: "{{ ssap_ansible_devtools_image }}"
-#     state: present
-#     auth_file: "{{ ssap_podman_authfile }}"
-#   register: r_pull_devtools
+- name: Pull PostgreSQL container image
+  containers.podman.podman_image:
+    name: "{{ ssap_postgresql_image }}"
+    state: present
+    auth_file: "{{ ssap_podman_authfile }}"
+  register: r_pull_postgresql
 
-# - name: Pull RHDH Hub container image
-#   containers.podman.podman_image:
-#     name: "{{ ssap_rhdh_image }}"
-#     state: present
-#     auth_file: "{{ ssap_podman_authfile }}"
-#   register: r_pull_rhdh
+- name: Pull Ansible Dev Tools container image
+  containers.podman.podman_image:
+    name: "{{ ssap_ansible_devtools_image }}"
+    state: present
+    auth_file: "{{ ssap_podman_authfile }}"
+  register: r_pull_devtools
 
-# # Create Podman Secrets for SSAP Configuration
-# - name: Get list of existing podman secrets
-#   containers.podman.podman_secret_info:
-#   register: r_existing_secrets_info
+- name: Pull RHDH Hub container image
+  containers.podman.podman_image:
+    name: "{{ ssap_rhdh_image }}"
+    state: present
+    auth_file: "{{ ssap_podman_authfile }}"
+  register: r_pull_rhdh
 
-# - name: Set list of existing secret names
-#   ansible.builtin.set_fact:
-#     existing_secret_names: "{{ r_existing_secrets_info.secrets | map(attribute='Name') | list }}"
+# Create Podman Secrets for SSAP Configuration
+- name: Get list of existing podman secrets
+  containers.podman.podman_secret_info:
+  register: r_existing_secrets_info
 
-# - name: Remove existing OAuth client secret if present
-#   containers.podman.podman_secret:
-#     name: "{{ ssap_podman_secret_oauth_name }}"
-#     state: absent
-#   when: ssap_podman_secret_oauth_name in existing_secret_names
+- name: Set list of existing secret names
+  ansible.builtin.set_fact:
+    existing_secret_names: "{{ r_existing_secrets_info.secrets | map(attribute='Name') | list }}"
 
-# - name: Create podman secret for OAuth client secret
-#   containers.podman.podman_secret:
-#     name: "{{ ssap_podman_secret_oauth_name }}"
-#     data: "{{ ssap_aap_oauth_client_secret }}"
-#     state: present
-#     force: true
+- name: Remove existing OAuth client secret if present
+  containers.podman.podman_secret:
+    name: "{{ ssap_podman_secret_oauth_name }}"
+    state: absent
+  when: ssap_podman_secret_oauth_name in existing_secret_names
 
-# - name: Remove existing AAP token secret if present
-#   containers.podman.podman_secret:
-#     name: "{{ ssap_podman_secret_token_name }}"
-#     state: absent
-#   when: ssap_podman_secret_token_name in existing_secret_names
+- name: Create podman secret for OAuth client secret
+  containers.podman.podman_secret:
+    name: "{{ ssap_podman_secret_oauth_name }}"
+    data: "{{ ssap_aap_oauth_client_secret }}"
+    state: present
+    force: true
 
-# - name: Create podman secret for AAP token
-#   containers.podman.podman_secret:
-#     name: "{{ ssap_podman_secret_token_name }}"
-#     data: "{{ ssap_aap_admin_token }}"
-#     state: present
-#     force: true
+- name: Remove existing AAP token secret if present
+  containers.podman.podman_secret:
+    name: "{{ ssap_podman_secret_token_name }}"
+    state: absent
+  when: ssap_podman_secret_token_name in existing_secret_names
 
-# - name: Display container setup summary
-#   ansible.builtin.debug:
-#     msg:
-#       - "Container Images Pulled Successfully:"
-#       - "  - PostgreSQL: {{ ssap_postgresql_image }}"
-#       - "  - Ansible Dev Tools: {{ ssap_ansible_devtools_image }}"
-#       - "  - RHDH Hub: {{ ssap_rhdh_image }}"
-#       - ""
-#       - "Podman Secrets Created:"
-#       - "  - {{ ssap_podman_secret_oauth_name }}"
-#       - "  - {{ ssap_podman_secret_token_name }}"
+- name: Create podman secret for AAP token
+  containers.podman.podman_secret:
+    name: "{{ ssap_podman_secret_token_name }}"
+    data: "{{ ssap_aap_admin_token }}"
+    state: present
+    force: true
+
+- name: Display container setup summary
+  ansible.builtin.debug:
+    msg:
+      - "Container Images Pulled Successfully:"
+      - "  - PostgreSQL: {{ ssap_postgresql_image }}"
+      - "  - Ansible Dev Tools: {{ ssap_ansible_devtools_image }}"
+      - "  - RHDH Hub: {{ ssap_rhdh_image }}"
+      - ""
+      - "Podman Secrets Created:"
+      - "  - {{ ssap_podman_secret_oauth_name }}"
+      - "  - {{ ssap_podman_secret_token_name }}"
