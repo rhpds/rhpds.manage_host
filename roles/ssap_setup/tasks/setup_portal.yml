@@ -1,5 +1,21 @@
 ---
 # Generate SSAP Portal Configuration File
+- name: Copy SSL certificates
+  ansible.builtin.copy:
+    src: dummy-cert.pem
+    dest: /etc/portal/ssl/cert.pem
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Copy SSL key
+  ansible.builtin.copy:
+    src: dummy-key.pem
+    dest: /etc/portal/ssl/key.pem
+    owner: root
+    group: root
+    mode: '0600'
+
 - name: Create portal environment configuration file
   ansible.builtin.template:
     src: portal.env.j2
