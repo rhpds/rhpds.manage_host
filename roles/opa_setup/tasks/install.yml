@@ -14,8 +14,13 @@
   loop:
     - "{{ opa_config_dir }}"
     - "{{ opa_data_dir }}"
-    - "{{ opa_policy_dir }}"
     - "{{ opa_log_dir }}"
+
+- name: Create OPA Policy directories
+  ansible.builtin.file:
+    path: "{{ opa_policy_dir }}"
+    state: directory
+    mode: '0777'
 
 - name: Set appropriate permissions for data directories
   ansible.builtin.file:
