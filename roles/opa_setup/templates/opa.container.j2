@@ -41,7 +41,7 @@ Environment=TZ={{ opa_timezone }}
 {% if opa_use_config_file %}
 Exec=run --server --config-file=/config/config.yaml {{ opa_extra_args | join(' ') }}
 {% else %}
-Exec=run --server --addr={{ opa_server_addr }} {{ opa_extra_args | join(' ') }}
+Exec=run --server --set decision_logs.console=true --addr={{ opa_server_addr }} --watch /policies
 {% endif %}
 
 # Auto-update and restart
