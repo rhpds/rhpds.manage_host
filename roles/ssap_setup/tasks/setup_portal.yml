@@ -22,6 +22,25 @@
     dest: "{{ ssap_portal_env_file }}"
     mode: '0600'
 
+- name: Ensure portal config directory exists
+  ansible.builtin.file:
+    path: /etc/portal/configs/app-config
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create app-config.local.yaml to allow Showroom framing
+  ansible.builtin.copy:
+    dest: /etc/portal/configs/app-config/app-config.local.yaml
+    mode: '0644'
+    content: |
+      backend:
+        csp:
+          frame-ancestors:
+            - "'self'"
+            - "{{ ssap_showroom_url }}"
+
 - name: Run ssap portal setup
   ansible.builtin.shell: portal-setup -c {{ ssap_portal_env_file }} -y
   register: r_portal_setup
