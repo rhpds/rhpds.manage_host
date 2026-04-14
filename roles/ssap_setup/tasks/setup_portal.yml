@@ -40,6 +40,13 @@
           frame-ancestors:
             - "'self'"
             - "{{ ssap_showroom_url }}"
+        reading:
+          allow:
+            - host: ${GITLAB_URL}
+            - host: ${GITHUB_URL}
+            - host: raw.githubusercontent.com
+            - host: localhost
+            - host: gitea-{{ subdomain }}
 
 - name: Run ssap portal setup
   ansible.builtin.shell: portal-setup -c {{ ssap_portal_env_file }} -y
