@@ -1,0 +1,30 @@
+---
+- name: Create users and configure bastion
+  delegate_to: "{{ ocp4_workload_bastion_users_host }}"
+  become: true
+  block:
+    - name: Create user accounts
+      ansible.builtin.user:
+        name: "{{ _user.name }}"
+        password: "{{ _user.password | password_hash('sha512') }}"
+        groups: "{{ _user.groups | default(omit) }}"
+        shell: "{{ _user.shell | default('/bin/bash') }}"
+        create_home: true
+        generate_ssh_key: "{{ _user.generate_ssh_key | default(false) }}"
+      loop: "{{ ocp4_workload_bastion_users_list }}"
+      loop_control:
+        loop_var: _user
+        label: "{{ _user.name }}"
+
+    - name: Enable password authentication in sshd_config
+      when: ocp4_workload_bastion_users_enable_password_auth | bool
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication yes"
+
+    - name: Restart sshd to apply changes
+      when: ocp4_workload_bastion_users_enable_password_auth | bool
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
