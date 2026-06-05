@@ -1,0 +1,17 @@
+---
+# Target host — defaults to first bastion in inventory
+ocp4_workload_bastion_users_host: "{{ groups['bastions'][0] }}"
+
+# List of users to create on the bastion
+# ocp4_workload_bastion_users_list:
+#   - name: user1
+#     password: "{{ common_admin_password }}"
+#     groups: wheel
+#     shell: /bin/bash
+#     generate_ssh_key: false
+#   - name: user2
+#     password: "{{ common_admin_password }}"
+ocp4_workload_bastion_users_list: []
+
+# Enable password authentication in sshd after creating users
+ocp4_workload_bastion_users_enable_password_auth: true
