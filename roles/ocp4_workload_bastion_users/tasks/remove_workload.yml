@@ -1,0 +1,12 @@
+---
+- name: Remove users from bastion
+  delegate_to: "{{ ocp4_workload_bastion_users_host }}"
+  become: true
+  ansible.builtin.user:
+    name: "{{ _user.name }}"
+    state: absent
+    remove: true
+  loop: "{{ ocp4_workload_bastion_users_list }}"
+  loop_control:
+    loop_var: _user
+    label: "{{ _user.name }}"
