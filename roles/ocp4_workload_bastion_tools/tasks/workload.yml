@@ -1,0 +1,46 @@
+---
+- name: Install tools on bastion
+  delegate_to: "{{ ocp4_workload_bastion_tools_host }}"
+  become: true
+  block:
+    - name: Install RPM packages
+      when: ocp4_workload_bastion_tools_rpms | length > 0
+      ansible.builtin.dnf:
+        name: "{{ ocp4_workload_bastion_tools_rpms }}"
+        state: present
+
+    - name: Download binary CLIs
+      when: ocp4_workload_bastion_tools_binaries | length > 0
+      ansible.builtin.get_url:
+        url: "{{ _binary.url }}"
+        dest: "{{ _binary.dest }}"
+        mode: "{{ _binary.mode | default('0755') }}"
+        owner: "{{ _binary.owner | default('root') }}"
+        group: "{{ _binary.group | default('root') }}"
+      loop: "{{ ocp4_workload_bastion_tools_binaries }}"
+      loop_control:
+        loop_var: _binary
+        label: "{{ _binary.description }}"
+      retries: 5
+      delay: 10
+      register: r_binary
+      until: r_binary is success
+
+    - name: Download and extract archives
+      when: ocp4_workload_bastion_tools_archives | length > 0
+      ansible.builtin.unarchive:
+        src: "{{ _archive.url }}"
+        dest: "{{ _archive.dest }}"
+        remote_src: true
+        mode: "{{ _archive.mode | default('0755') }}"
+        owner: "{{ _archive.owner | default('root') }}"
+        group: "{{ _archive.group | default('root') }}"
+        creates: "{{ _archive.creates | default(omit) }}"
+      loop: "{{ ocp4_workload_bastion_tools_archives }}"
+      loop_control:
+        loop_var: _archive
+        label: "{{ _archive.description }}"
+      retries: 5
+      delay: 10
+      register: r_archive
+      until: r_archive is success
