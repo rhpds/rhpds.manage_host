@@ -1,0 +1,26 @@
+---
+# Target host — defaults to first bastion in inventory
+ocp4_workload_bastion_tools_host: "{{ groups['bastions'][0] }}"
+
+# RPM packages to install via dnf
+# ocp4_workload_bastion_tools_rpms:
+#   - jq
+#   - htop
+#   - bash-completion
+ocp4_workload_bastion_tools_rpms: []
+
+# Binary files to download directly (single executable)
+# ocp4_workload_bastion_tools_binaries:
+#   - description: Install helm
+#     url: https://mirror.openshift.com/pub/openshift-v4/clients/helm/latest/helm-linux-amd64
+#     dest: /usr/local/bin/helm
+#     mode: "0755"
+ocp4_workload_bastion_tools_binaries: []
+
+# Archives to download and extract (tar.gz, zip, etc.)
+# ocp4_workload_bastion_tools_archives:
+#   - description: Install kubeseal
+#     url: https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.27.0/kubeseal-0.27.0-linux-amd64.tar.gz
+#     dest: /usr/local/bin/
+#     creates: /usr/local/bin/kubeseal
+ocp4_workload_bastion_tools_archives: []
