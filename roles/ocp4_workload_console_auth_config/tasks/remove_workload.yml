@@ -1,0 +1,11 @@
+---
+- name: Remove OCP Console logout redirect
+  kubernetes.core.k8s:
+    state: patched
+    api_version: config.openshift.io/v1
+    kind: Console
+    name: cluster
+    definition:
+      spec:
+        authentication:
+          logoutRedirect: ""
