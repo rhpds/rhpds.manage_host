@@ -1,0 +1,20 @@
+---
+- name: Remove installed RPMs from bastion
+  when: ocp4_workload_bastion_tools_rpms | length > 0
+  delegate_to: "{{ ocp4_workload_bastion_tools_host }}"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ ocp4_workload_bastion_tools_rpms }}"
+    state: absent
+
+- name: Remove installed binaries from bastion
+  when: ocp4_workload_bastion_tools_binaries | length > 0
+  delegate_to: "{{ ocp4_workload_bastion_tools_host }}"
+  become: true
+  ansible.builtin.file:
+    path: "{{ _binary.dest }}"
+    state: absent
+  loop: "{{ ocp4_workload_bastion_tools_binaries }}"
+  loop_control:
+    loop_var: _binary
+    label: "{{ _binary.description }}"
