@@ -1,0 +1,17 @@
+---
+# Keycloak realm name — must match ocp4_workload_authentication_keycloak_default_realm
+ocp4_workload_console_auth_config_keycloak_realm: keycloak
+
+# Keycloak base URL — auto-computed from cluster ingress domain
+ocp4_workload_console_auth_config_keycloak_url: >-
+  https://sso.{{ openshift_cluster_ingress_domain }}
+
+# Keycloak client ID used for OCP integration (created by authentication workload)
+ocp4_workload_console_auth_config_keycloak_client_id: idp-4-ocp
+
+# Computed logout redirect URL
+ocp4_workload_console_auth_config_logout_redirect: >-
+  {{ ocp4_workload_console_auth_config_keycloak_url }}/realms/{{
+  ocp4_workload_console_auth_config_keycloak_realm
+  }}/protocol/openid-connect/logout?client_id={{
+  ocp4_workload_console_auth_config_keycloak_client_id }}
