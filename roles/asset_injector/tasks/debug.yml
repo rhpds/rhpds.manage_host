@@ -2,7 +2,7 @@
 - name: Debug | {{ _asset.description }}
   when: _asset.var is defined
   ansible.builtin.debug:
-    var: "{{ _asset.var }}"
+    msg: "{{ _asset.var }}: {{ lookup('vars', _asset.var) }}"
     verbosity: "{{ _asset.verbosity | default(omit) }}"
 
 - name: Debug | {{ _asset.description }}
