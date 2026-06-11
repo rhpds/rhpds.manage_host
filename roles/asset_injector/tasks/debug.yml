@@ -1,0 +1,6 @@
+---
+- name: Debug | {{ _asset.description }}
+  ansible.builtin.debug:
+    var: "{{ _asset.var | default(omit) }}"
+    msg: "{{ _asset.msg | default(omit) }}"
+    verbosity: "{{ _asset.verbosity | default(omit) }}"
