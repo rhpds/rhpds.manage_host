@@ -1,6 +1,12 @@
 ---
 - name: Debug | {{ _asset.description }}
+  when: _asset.var is defined
   ansible.builtin.debug:
-    var: "{{ _asset.var | default(omit) }}"
-    msg: "{{ _asset.msg | default(omit) }}"
+    var: "{{ _asset.var }}"
+    verbosity: "{{ _asset.verbosity | default(omit) }}"
+
+- name: Debug | {{ _asset.description }}
+  when: _asset.msg is defined
+  ansible.builtin.debug:
+    msg: "{{ _asset.msg }}"
     verbosity: "{{ _asset.verbosity | default(omit) }}"
