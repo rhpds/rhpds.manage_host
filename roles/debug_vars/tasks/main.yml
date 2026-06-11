@@ -1,0 +1,88 @@
+---
+# ---------------------------------------------------------------------------
+# Section 1: Key Ansible / AgnosticD variables
+# ---------------------------------------------------------------------------
+- name: Debug key provisioning variables
+  when: debug_vars_show_vars | bool
+  ansible.builtin.debug:
+    msg:
+      - "=== Host: {{ inventory_hostname }} ==="
+      - "ACTION          : {{ ACTION | default('undefined') }}"
+      - "guid            : {{ guid | default('undefined') }}"
+      - "env_type        : {{ env_type | default('undefined') }}"
+      - "cloud_provider  : {{ cloud_provider | default('undefined') }}"
+      - "repo_method     : {{ repo_method | default('undefined') }}"
+      - "use_content_view: {{ use_content_view | default('undefined') }}"
+      - "student_name    : {{ student_name | default('undefined') }}"
+      - "subdomain_base  : {{ subdomain_base | default('undefined') }}"
+  tags: debug_vars
+
+- name: Debug extra variables
+  when:
+    - debug_vars_show_vars | bool
+    - debug_vars_extra_vars | length > 0
+  ansible.builtin.debug:
+    msg: "{{ item }}: {{ lookup('vars', item, default='undefined') }}"
+  loop: "{{ debug_vars_extra_vars }}"
+  tags: debug_vars
+
+# ---------------------------------------------------------------------------
+# Section 2: Subscription / rhsm.conf state
+# ---------------------------------------------------------------------------
+- name: Check subscription-manager status
+  when: debug_vars_show_rhsm | bool
+  ansible.builtin.command: subscription-manager status
+  register: _debug_sm_status
+  changed_when: false
+  failed_when: false
+  become: true
+  tags: debug_vars
+
+- name: Read /etc/rhsm/rhsm.conf
+  when: debug_vars_show_rhsm | bool
+  ansible.builtin.slurp:
+    src: /etc/rhsm/rhsm.conf
+  register: _debug_rhsm_conf
+  failed_when: false
+  become: true
+  tags: debug_vars
+
+- name: Check rhsm.conf.kat-backup exists
+  when: debug_vars_show_rhsm | bool
+  ansible.builtin.stat:
+    path: /etc/rhsm/rhsm.conf.kat-backup
+  register: _debug_kat_backup
+  become: true
+  tags: debug_vars
+
+- name: Debug subscription state
+  when: debug_vars_show_rhsm | bool
+  ansible.builtin.debug:
+    msg:
+      - "=== Subscription / RHSM ==="
+      - "subscription-manager status:"
+      - "{{ _debug_sm_status.stdout_lines | default(['(command failed)']) }}"
+      - "---"
+      - "rhsm.conf server_hostname: {{ (_debug_rhsm_conf.content | default('') | b64decode | regex_search('hostname\\s*=\\s*(\\S+)', '\\1') | first) if _debug_rhsm_conf.content is defined else '(file not readable)' }}"
+      - "rhsm.conf.kat-backup exists: {{ _debug_kat_backup.stat.exists | default(false) }}"
+  tags: debug_vars
+
+# ---------------------------------------------------------------------------
+# Section 3: Enabled DNF/YUM repos
+# ---------------------------------------------------------------------------
+- name: List enabled repos
+  when: debug_vars_show_repos | bool
+  ansible.builtin.command: dnf repolist enabled
+  register: _debug_repolist
+  changed_when: false
+  failed_when: false
+  become: true
+  tags: debug_vars
+
+- name: Debug enabled repos
+  when: debug_vars_show_repos | bool
+  ansible.builtin.debug:
+    msg:
+      - "=== Enabled Repos ==="
+      - "{{ _debug_repolist.stdout_lines | default(['(command failed)']) }}"
+  tags: debug_vars

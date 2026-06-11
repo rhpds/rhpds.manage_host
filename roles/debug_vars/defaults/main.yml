@@ -1,0 +1,14 @@
+---
+# Controls which debug sections are shown.
+# Set any to false to skip that section.
+
+debug_vars_show_vars: true
+debug_vars_show_rhsm: true
+debug_vars_show_repos: true
+
+# List of extra variable names to print in addition to the built-in set.
+# Example:
+#   debug_vars_extra_vars:
+#     - my_custom_var
+#     - another_var
+debug_vars_extra_vars: []
