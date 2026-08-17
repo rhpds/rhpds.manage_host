@@ -14,7 +14,18 @@
   register: _ocp4_workload_bastion_ssh_keygen_privkey
   delegate_to: "{{ ocp4_workload_bastion_ssh_keygen_host }}"
 
+- name: Slurp public key from bastion
+  ansible.builtin.slurp:
+    src: "/home/{{ ocp4_workload_bastion_ssh_keygen_user }}/{{ ocp4_workload_bastion_ssh_keygen_key_path }}.pub"
+  register: _ocp4_workload_bastion_ssh_keygen_pubkey
+  delegate_to: "{{ ocp4_workload_bastion_ssh_keygen_host }}"
+
 - name: Set private key fact
   ansible.builtin.set_fact:
     "{{ ocp4_workload_bastion_ssh_keygen_privatekey_fact }}": >-
       {{ _ocp4_workload_bastion_ssh_keygen_privkey.content | b64decode }}
+
+- name: Set public key fact
+  ansible.builtin.set_fact:
+    "{{ ocp4_workload_bastion_ssh_keygen_publickey_fact }}": >-
+      {{ _ocp4_workload_bastion_ssh_keygen_pubkey.content | b64decode }}

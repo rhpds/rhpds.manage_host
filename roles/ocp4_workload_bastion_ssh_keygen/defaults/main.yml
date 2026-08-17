@@ -12,5 +12,6 @@ ocp4_workload_bastion_ssh_keygen_key_path: ".ssh/id_rsa"
 ocp4_workload_bastion_ssh_keygen_key_type: rsa
 ocp4_workload_bastion_ssh_keygen_key_bits: 4096
 
-# Name of the fact to set with the private key content
+# Name of the facts to set with the key content
 ocp4_workload_bastion_ssh_keygen_privatekey_fact: ssh_privatekey
+ocp4_workload_bastion_ssh_keygen_publickey_fact: ssh_publickey
