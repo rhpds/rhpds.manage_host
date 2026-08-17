@@ -26,10 +26,6 @@
     dest: "{{ ocp4_workload_bastion_ssh_keygen_local_key_path }}"
     mode: '0600'
 
-- name: Set ssh_provision_key_path so extravars ssh_privatekey lookup resolves
-  ansible.builtin.set_fact:
-    ssh_provision_key_path: "{{ ocp4_workload_bastion_ssh_keygen_local_key_path }}"
-
 - name: Set public key fact
   ansible.builtin.set_fact:
     "{{ ocp4_workload_bastion_ssh_keygen_publickey_fact }}": >-
