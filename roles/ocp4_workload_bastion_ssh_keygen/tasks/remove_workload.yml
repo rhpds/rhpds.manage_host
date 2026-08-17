@@ -1,0 +1,12 @@
+---
+- name: Remove SSH private key from bastion
+  ansible.builtin.file:
+    path: "/home/{{ ocp4_workload_bastion_ssh_keygen_user }}/{{ ocp4_workload_bastion_ssh_keygen_key_path }}"
+    state: absent
+  delegate_to: "{{ ocp4_workload_bastion_ssh_keygen_host }}"
+
+- name: Remove SSH public key from bastion
+  ansible.builtin.file:
+    path: "/home/{{ ocp4_workload_bastion_ssh_keygen_user }}/{{ ocp4_workload_bastion_ssh_keygen_key_path }}.pub"
+    state: absent
+  delegate_to: "{{ ocp4_workload_bastion_ssh_keygen_host }}"

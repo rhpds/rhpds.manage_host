@@ -1,0 +1,8 @@
+---
+- name: Running workload tasks
+  ansible.builtin.import_tasks: workload.yml
+  when: ACTION == "provision"
+
+- name: Running remove tasks
+  ansible.builtin.import_tasks: remove_workload.yml
+  when: ACTION == "destroy"
