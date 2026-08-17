@@ -12,6 +12,10 @@ ocp4_workload_bastion_ssh_keygen_key_path: ".ssh/id_rsa"
 ocp4_workload_bastion_ssh_keygen_key_type: rsa
 ocp4_workload_bastion_ssh_keygen_key_bits: 4096
 
-# Name of the facts to set with the key content
-ocp4_workload_bastion_ssh_keygen_privatekey_fact: ssh_privatekey
+# Local path on the EE/runner where the private key file is written
+# ssh_privatekey in extravars is defined as: lookup('file', hostvars.localhost.ssh_provision_key_path)
+# so we write the key here and set ssh_provision_key_path to this value
+ocp4_workload_bastion_ssh_keygen_local_key_path: /tmp/bastion_ssh_provision_key
+
+# Name of the fact to set with the public key content
 ocp4_workload_bastion_ssh_keygen_publickey_fact: ssh_publickey

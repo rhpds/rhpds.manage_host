@@ -20,10 +20,15 @@
   register: _ocp4_workload_bastion_ssh_keygen_pubkey
   delegate_to: "{{ ocp4_workload_bastion_ssh_keygen_host }}"
 
-- name: Set private key fact
+- name: Write private key to local file on runner
+  ansible.builtin.copy:
+    content: "{{ _ocp4_workload_bastion_ssh_keygen_privkey.content | b64decode }}"
+    dest: "{{ ocp4_workload_bastion_ssh_keygen_local_key_path }}"
+    mode: '0600'
+
+- name: Set ssh_provision_key_path so extravars ssh_privatekey lookup resolves
   ansible.builtin.set_fact:
-    "{{ ocp4_workload_bastion_ssh_keygen_privatekey_fact }}": >-
-      {{ _ocp4_workload_bastion_ssh_keygen_privkey.content | b64decode }}
+    ssh_provision_key_path: "{{ ocp4_workload_bastion_ssh_keygen_local_key_path }}"
 
 - name: Set public key fact
   ansible.builtin.set_fact:
