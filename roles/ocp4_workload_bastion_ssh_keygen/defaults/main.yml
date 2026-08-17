@@ -1,0 +1,16 @@
+---
+# Target host — defaults to first bastion in inventory
+ocp4_workload_bastion_ssh_keygen_host: "{{ groups['bastions'][0] }}"
+
+# User on the bastion to generate the SSH key for
+ocp4_workload_bastion_ssh_keygen_user: "{{ bastion_ansible_user | default('cloud-user') }}"
+
+# Path to generate the key at (relative to user home)
+ocp4_workload_bastion_ssh_keygen_key_path: ".ssh/id_rsa"
+
+# Key type and size
+ocp4_workload_bastion_ssh_keygen_key_type: rsa
+ocp4_workload_bastion_ssh_keygen_key_bits: 4096
+
+# Name of the fact to set with the private key content
+ocp4_workload_bastion_ssh_keygen_privatekey_fact: ssh_privatekey
